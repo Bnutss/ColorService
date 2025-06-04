@@ -131,3 +131,4 @@ CSRF_TRUSTED_ORIGINS = [
 ]
 
 API_TOKEN = os.getenv("API_TOKEN", "color_service_supersecret")
+DATA_UPLOAD_MAX_MEMORY_SIZE = 50 * 1024 * 1024
