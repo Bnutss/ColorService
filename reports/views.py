@@ -6,7 +6,7 @@ from django.conf import settings
 
 from django.shortcuts import render
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger('django')
 
 
 @csrf_exempt
