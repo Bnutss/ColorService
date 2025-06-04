@@ -132,3 +132,43 @@ CSRF_TRUSTED_ORIGINS = [
 
 API_TOKEN = os.getenv("API_TOKEN", "color_service_supersecret")
 DATA_UPLOAD_MAX_MEMORY_SIZE = 50 * 1024 * 1024
+
+
+# Loggin
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'verbose': {
+            'format': '{levelname} {asctime} {module} {message}',
+            'style': '{',
+        },
+    },
+    'handlers': {
+        'file_info': {
+            'level': 'INFO',
+            'class': 'logging.FileHandler',
+            'filename': os.path.join(BASE_DIR, 'django_info.log'),
+            'formatter': 'verbose',
+        },
+        'file_error': {
+            'level': 'ERROR',
+            'class': 'logging.FileHandler',
+            'filename': os.path.join(BASE_DIR, 'django_errors.log'),
+            'formatter': 'verbose',
+        },
+    },
+    'loggers': {
+        'django': {
+            'handlers': ['file_info', 'file_error'],
+            'level': 'DEBUG',
+            'propagate': True,
+        },
+        'slb_logger': {
+            'handlers': ['file_info', 'file_error'],
+            'level': 'DEBUG',
+            'propagate': False,
+        },
+    }
+}
+
