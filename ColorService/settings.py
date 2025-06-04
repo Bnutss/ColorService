@@ -13,7 +13,7 @@ SECRET_KEY = 'django-insecure-1s8^c-ee$-$b)a09)adadv4@dnd-$&ebs0k+)$kjndbi1fnvz$
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['uztexsoft.uz', 'www.uztexsoft.uz']
+ALLOWED_HOSTS = ['uztexsoft.uz', 'www.uztexsoft.uz', '127.0.0.1']
 
 # Application definition
 
@@ -106,7 +106,7 @@ USE_TZ = True
 
 STATIC_URL = '/services/static/'
 
-STATIC_ROOT = os.path.join(BASE_DIR, 'static')
+STATIC_ROOT = os.path.join(BASE_DIR, 'static/')
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
