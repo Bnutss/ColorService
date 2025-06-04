@@ -3,5 +3,5 @@ from . import views
 
 
 urlpatterns = [
-    path('get_data', views.get_data_color_service),
+    path('get_data/', views.get_data_color_service),
 ]
