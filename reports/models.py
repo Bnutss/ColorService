@@ -2,7 +2,7 @@ from django.db import models
 
 
 class SupStorico(models.Model):
-    sup_storico_id = models.AutoField(primary_key=True, blank=True, null=True)
+    sup_storico_id = models.AutoField(primary_key=True)
     macchina = models.CharField(max_length=20, blank=True, null=True)
     lotto = models.CharField(max_length=20, blank=True, null=True)
     introduzione = models.SmallIntegerField(blank=True, null=True)
