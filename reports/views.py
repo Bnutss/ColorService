@@ -3,10 +3,10 @@ import logging
 from django.http import JsonResponse, HttpResponseForbidden, HttpResponseBadRequest
 from django.views.decorators.csrf import csrf_exempt
 from django.conf import settings
-from ColorService.reports.models import SupStorico
-
+from .models import SupStorico
 
 logger = logging.getLogger('django')
+
 
 @csrf_exempt
 def get_data_color_service(request):

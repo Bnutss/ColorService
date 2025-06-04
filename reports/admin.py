@@ -1,5 +1,5 @@
 from django.contrib import admin
-from reports.models import SupStorico
+from .models import SupStorico
 
 
 @admin.register(SupStorico)

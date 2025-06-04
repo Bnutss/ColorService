@@ -1,7 +1,7 @@
 from django.urls import path
-from reports import views
+from .views import get_data_color_service
 
 
 urlpatterns = [
-    path('get_data/', views.get_data_color_service),
+    path('get_data/', get_data_color_service),
 ]
