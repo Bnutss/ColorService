@@ -129,3 +129,5 @@ CSRF_TRUSTED_ORIGINS = [
     "http://uztexsoft.uz",
     "https://uztexsoft.uz",
 ]
+
+API_TOKEN = os.getenv("API_TOKEN", "color_service_supersecret")
