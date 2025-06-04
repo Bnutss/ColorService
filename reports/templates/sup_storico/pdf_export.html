@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>История дозирования ColorService</title>
+</head>
+<body>
+<div style="text-align: center; margin-bottom: 20px;">
+    <h1>История дозирования ColorService</h1>
+    <p><strong>Дата экспорта:</strong> {{ export_date|date:"d.m.Y H:i" }}</p>
+    <p><strong>Всего записей:</strong> {{ total_count }}</p>
+
+    {% if search_query or selected_macchina or date_from or date_to %}
+        <div style="margin: 10px 0; padding: 10px; background-color: #f8f9fa; border: 1px solid #dee2e6;">
+            <strong>Применённые фильтры:</strong>
+            {% if search_query %}<br>Поиск: {{ search_query }}{% endif %}
+            {% if selected_macchina %}<br>Машина: {{ selected_macchina }}{% endif %}
+            {% if date_from %}<br>Дата с: {{ date_from }}{% endif %}
+            {% if date_to %}<br>Дата по: {{ date_to }}{% endif %}
+        </div>
+    {% endif %}
+</div>
+
+<table class="table">
+    <thead>
+    <tr>
+        <th class="text-center">ID</th>
+        <th>Машина</th>
+        <th>Лот</th>
+        <th>Продукт</th>
+        <th>Резервуар</th>
+        <th>Дата дозирования</th>
+        <th>Период</th>
+        <th>Дозирование</th>
+        <th>Линия</th>
+        <th>SO/PO</th>
+        <th>Тип вызова</th>
+    </tr>
+    </thead>
+    <tbody>
+    {% for record in records %}
+        <tr>
+            <td class="text-center">{{ record.sup_storico_id }}</td>
+            <td>
+                {% if record.macchina %}
+                    <span class="badge bg-primary">{{ record.macchina }}</span>
+                {% else %}—{% endif %}
+            </td>
+            <td class="fw-bold">{{ record.lotto|default:"—" }}</td>
+            <td>
+                {% if record.id_prodotto %}
+                    <span class="badge bg-info">{{ record.id_prodotto }}</span>
+                {% else %}—{% endif %}
+            </td>
+            <td>{{ record.tank|default:"—" }}</td>
+            <td>
+                {% if record.data_dosaggio %}
+                    <div class="fw-bold">{{ record.data_dosaggio|date:"d.m.Y" }}</div>
+                    <div class="small">{{ record.data_dosaggio|time:"H:i:s" }}</div>
+                {% else %}—{% endif %}
+            </td>
+            <td>
+                {% if record.data_inizio and record.data_fine %}
+                    <div class="small">
+                        {{ record.data_inizio|time:"H:i" }} - {{ record.data_fine|time:"H:i" }}
+                    </div>
+                {% else %}—{% endif %}
+            </td>
+            <td>
+                {% if record.da_dosare or record.dosato %}
+                    {% if record.da_dosare %}
+                        <div class="small">План: {{ record.da_dosare }}</div>
+                    {% endif %}
+                    {% if record.dosato %}
+                        <div class="small fw-bold">Факт: {{ record.dosato }}</div>
+                    {% endif %}
+                {% else %}—{% endif %}
+            </td>
+            <td class="text-center">
+                {% if record.linea %}
+                    <span class="badge bg-warning">{{ record.linea }}</span>
+                {% else %}—{% endif %}
+            </td>
+            <td>
+                {% if record.so_number or record.po_number %}
+                    <div class="small">
+                        {% if record.so_number %}SO: {{ record.so_number }}{% endif %}
+                        {% if record.po_number %}<br>PO: {{ record.po_number }}{% endif %}
+                    </div>
+                {% else %}—{% endif %}
+            </td>
+            <td class="small">{{ record.tipo_chiamata|default:"—" }}</td>
+        </tr>
+    {% endfor %}
+    </tbody>
+</table>
+</body>
+</html>
