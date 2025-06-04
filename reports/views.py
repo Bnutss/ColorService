@@ -9,6 +9,7 @@ from django.shortcuts import render
 logger = logging.getLogger(__name__)
 
 
+@csrf_exempt
 def get_data_color_service(request):
     if request.method != 'POST':
         return HttpResponseBadRequest("Only POST method allowed")
