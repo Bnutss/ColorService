@@ -5,7 +5,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.conf import settings
 from .models import SupStorico
 from django.views.generic import ListView
-from django.db.models import Q
+from django.db.models import Q, Sum
 from django.http import HttpResponse
 from django.template.loader import get_template
 import openpyxl
@@ -107,11 +107,25 @@ class SupStoricoListView(ListView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        filtered_queryset = self.get_queryset()
+        total_dosato = filtered_queryset.aggregate(
+            total_dosato=Sum('dosato')
+        )['total_dosato'] or 0
+
+        total_da_dosare = filtered_queryset.aggregate(
+            total_da_dosare=Sum('da_dosare')
+        )['total_da_dosare'] or 0
+
+        records_with_dosato = filtered_queryset.filter(dosato__isnull=False).count()
         context['machines'] = SupStorico.objects.values_list('macchina', flat=True).distinct().order_by('macchina')
         context['search_query'] = self.request.GET.get('search', '')
         context['selected_macchina'] = self.request.GET.get('macchina', '')
         context['date_from'] = self.request.GET.get('date_from', '')
         context['date_to'] = self.request.GET.get('date_to', '')
+        context['total_dosato'] = total_dosato
+        context['total_da_dosare'] = total_da_dosare
+        context['records_with_dosato'] = records_with_dosato
+        context['filtered_count'] = filtered_queryset.count()
 
         return context
 
@@ -121,9 +135,16 @@ class SupStoricoPDFExportView(SupStoricoListView):
 
     def get(self, request, *args, **kwargs):
         queryset = self.get_queryset()
+        total_dosato = queryset.aggregate(total_dosato=Sum('dosato'))['total_dosato'] or 0
+        total_da_dosare = queryset.aggregate(total_da_dosare=Sum('da_dosare'))['total_da_dosare'] or 0
+        records_with_dosato = queryset.filter(dosato__isnull=False).count()
+
         context = {
             'records': queryset,
             'total_count': queryset.count(),
+            'total_dosato': total_dosato,
+            'total_da_dosare': total_da_dosare,
+            'records_with_dosato': records_with_dosato,
             'search_query': request.GET.get('search', ''),
             'selected_macchina': request.GET.get('macchina', ''),
             'date_from': request.GET.get('date_from', ''),
@@ -170,6 +191,21 @@ class SupStoricoPDFExportView(SupStoricoListView):
             .text-center { text-align: center; }
             .fw-bold { font-weight: bold; }
             .small { font-size: 8px; }
+            .stats-box {
+                background-color: #f8f9fa;
+                border: 1px solid #dee2e6;
+                padding: 10px;
+                margin: 10px 0;
+                border-radius: 5px;
+            }
+            .stat-item {
+                display: inline-block;
+                margin-right: 20px;
+                padding: 5px 10px;
+                background-color: white;
+                border-radius: 3px;
+                border: 1px solid #ddd;
+            }
         ''', font_config=font_config)
 
         pdf = html.write_pdf(stylesheets=[css], font_config=font_config)
@@ -185,18 +221,37 @@ class SupStoricoExcelExportView(SupStoricoListView):
 
     def get(self, request, *args, **kwargs):
         queryset = self.get_queryset()
+        total_dosato = queryset.aggregate(total_dosato=Sum('dosato'))['total_dosato'] or 0
+        total_da_dosare = queryset.aggregate(total_da_dosare=Sum('da_dosare'))['total_da_dosare'] or 0
+        records_with_dosato = queryset.filter(dosato__isnull=False).count()
         wb = openpyxl.Workbook()
         ws = wb.active
         ws.title = "История дозирования"
         header_font = Font(bold=True, color="FFFFFF")
         header_fill = PatternFill(start_color="366092", end_color="366092", fill_type="solid")
         header_alignment = Alignment(horizontal="center", vertical="center")
+        stats_font = Font(bold=True, color="FFFFFF")
+        stats_fill = PatternFill(start_color="28a745", end_color="28a745", fill_type="solid")
+
         border = Border(
             left=Side(style='thin'),
             right=Side(style='thin'),
             top=Side(style='thin'),
             bottom=Side(style='thin')
         )
+
+        ws.cell(row=1, column=1, value="СТАТИСТИКА ДОЗИРОВАНИЯ").font = stats_font
+        ws.cell(row=1, column=1).fill = stats_fill
+        ws.merge_cells('A1:E1')
+        ws.cell(row=2, column=1, value="Общее количество записей:")
+        ws.cell(row=2, column=2, value=queryset.count())
+        ws.cell(row=2, column=3, value="Записей с дозированием:")
+        ws.cell(row=2, column=4, value=records_with_dosato)
+        ws.cell(row=3, column=1, value="Общий план (да_досаре):")
+        ws.cell(row=3, column=2, value=float(total_da_dosare))
+        ws.cell(row=3, column=3, value="Общий факт (досато):")
+        ws.cell(row=3, column=4, value=float(total_dosato))
+        start_row = 5
 
         headers = [
             'ID', 'Машина', 'Лот', 'Продукт', 'Резервуар',
@@ -206,13 +261,13 @@ class SupStoricoExcelExportView(SupStoricoListView):
         ]
 
         for col, header in enumerate(headers, 1):
-            cell = ws.cell(row=1, column=col, value=header)
+            cell = ws.cell(row=start_row, column=col, value=header)
             cell.font = header_font
             cell.fill = header_fill
             cell.alignment = header_alignment
             cell.border = border
 
-        for row, record in enumerate(queryset, 2):
+        for row, record in enumerate(queryset, start_row + 1):
             data = [
                 record.sup_storico_id,
                 record.macchina or '',
@@ -236,9 +291,10 @@ class SupStoricoExcelExportView(SupStoricoListView):
             for col, value in enumerate(data, 1):
                 cell = ws.cell(row=row, column=col, value=value)
                 cell.border = border
-                if col in [1, 12, 13, 14]:  # ID, количества, линия
+
+                if col in [1, 12, 13, 14]:
                     cell.alignment = Alignment(horizontal="right")
-                elif col in [6, 7, 8, 9, 10, 11]:  # Даты и времена
+                elif col in [6, 7, 8, 9, 10, 11]:
                     cell.alignment = Alignment(horizontal="center")
 
         for column in ws.columns:
@@ -253,7 +309,7 @@ class SupStoricoExcelExportView(SupStoricoListView):
             adjusted_width = min(max_length + 2, 50)
             ws.column_dimensions[column_letter].width = adjusted_width
 
-        info_row = len(queryset) + 3
+        info_row = len(queryset) + start_row + 2
         ws.cell(row=info_row, column=1, value="Параметры экспорта:").font = Font(bold=True)
 
         if request.GET.get('search'):
@@ -266,7 +322,7 @@ class SupStoricoExcelExportView(SupStoricoListView):
             ws.cell(row=info_row + 4, column=1, value=f"Дата по: {request.GET.get('date_to')}")
 
         ws.cell(row=info_row + 5, column=1, value=f"Дата экспорта: {datetime.now().strftime('%d.%m.%Y %H:%M:%S')}")
-        ws.cell(row=info_row + 6, column=1, value=f"Всего записей: {queryset.count()}")
+
         output = io.BytesIO()
         wb.save(output)
         output.seek(0)

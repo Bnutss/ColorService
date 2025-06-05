@@ -8,8 +8,20 @@
 <div style="text-align: center; margin-bottom: 20px;">
     <h1>История дозирования ColorService</h1>
     <p><strong>Дата экспорта:</strong> {{ export_date|date:"d.m.Y H:i" }}</p>
-    <p><strong>Всего записей:</strong> {{ total_count }}</p>
-
+    <div class="stats-box">
+        <div class="stat-item">
+            <strong>Всего записей:</strong> {{ total_count }}
+        </div>
+        <div class="stat-item">
+            <strong>Записей с дозированием:</strong> {{ records_with_dosato }}
+        </div>
+        <div class="stat-item">
+            <strong>Общий план:</strong> {{ total_da_dosare|floatformat:2 }}
+        </div>
+        <div class="stat-item">
+            <strong>Общий факт:</strong> {{ total_dosato|floatformat:2 }}
+        </div>
+    </div>
     {% if search_query or selected_macchina or date_from or date_to %}
         <div style="margin: 10px 0; padding: 10px; background-color: #f8f9fa; border: 1px solid #dee2e6;">
             <strong>Применённые фильтры:</strong>
@@ -20,7 +32,6 @@
         </div>
     {% endif %}
 </div>
-
 <table class="table">
     <thead>
     <tr>
@@ -69,10 +80,10 @@
             <td>
                 {% if record.da_dosare or record.dosato %}
                     {% if record.da_dosare %}
-                        <div class="small">План: {{ record.da_dosare }}</div>
+                        <div class="small">План: {{ record.da_dosare|floatformat:2 }}</div>
                     {% endif %}
                     {% if record.dosato %}
-                        <div class="small fw-bold">Факт: {{ record.dosato }}</div>
+                        <div class="small fw-bold">Факт: {{ record.dosato|floatformat:2 }}</div>
                     {% endif %}
                 {% else %}—{% endif %}
             </td>
@@ -94,5 +105,9 @@
     {% endfor %}
     </tbody>
 </table>
+<div style="margin-top: 20px; text-align: right; font-weight: bold;">
+    <p>Итого планируемое количество: {{ total_da_dosare|floatformat:2 }}</p>
+    <p>Итого фактическое количество: {{ total_dosato|floatformat:2 }}</p>
+</div>
 </body>
 </html>

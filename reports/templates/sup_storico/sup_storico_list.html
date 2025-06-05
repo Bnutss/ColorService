@@ -1,57 +1,43 @@
 {% extends 'mainmenu/dashboard.html' %}
+{% load math_extras %}
 {% load static %}
 {% load humanize %}
-
 {% block title %}UztexSoft - История дозирования{% endblock %}
 {% block page_title %}История дозирования ColorService{% endblock %}
 
 {% block breadcrumb_parent %}
     <li class="breadcrumb-item">Отчетность</li>
 {% endblock %}
-
 {% block breadcrumb_active %}
     <a href="{% url 'reports:sup_storico_list' %}">История дозирования</a>
 {% endblock %}
-
 {% block main_content %}
-    <div class="container-fluid">
-        <div class="row mb-4">
+    <div class="container-fluid px-2">
+        <div class="row mb-2">
             <div class="col-12">
-                <div class="card border-0 shadow-sm">
-                    <div class="card-header bg-gradient-primary text-white py-3">
-                        <div class="row align-items-center">
-                            <div class="col">
-                                <h5 class="card-title mb-0">
-                                    <i class="fas fa-filter me-2"></i>Фильтры и поиск
-                                </h5>
-                            </div>
-                            <div class="col-auto">
-                                <button class="btn btn-outline-light btn-sm" type="button" data-bs-toggle="collapse"
-                                        data-bs-target="#filterCollapse" aria-expanded="true">
-                                    <i class="fas fa-chevron-down"></i>
-                                </button>
-                            </div>
+                <div class="card border shadow-sm">
+                    <div class="card-header bg-primary text-white py-2">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h6 class="mb-0"><i class="fas fa-filter me-1"></i>Фильтры</h6>
+                            <button class="btn btn-outline-light btn-sm py-0 px-2" type="button"
+                                    data-bs-toggle="collapse" data-bs-target="#filterCollapse">
+                                <i class="fas fa-chevron-down"></i>
+                            </button>
                         </div>
                     </div>
                     <div class="collapse show" id="filterCollapse">
-                        <div class="card-body p-4">
+                        <div class="card-body py-2 px-3">
                             <form method="get" id="filter-form">
-                                <div class="row g-3">
-                                    <div class="col-lg-3 col-md-6">
-                                        <label for="search" class="form-label fw-semibold">
-                                            <i class="fas fa-search text-muted me-1"></i>Поиск
-                                        </label>
-                                        <input type="text" class="form-control form-control-lg" id="search"
-                                               name="search"
+                                <div class="row g-2 align-items-end">
+                                    <div class="col-lg-3 col-md-4 col-sm-6">
+                                        <label class="form-label mb-1 small fw-bold">Поиск</label>
+                                        <input type="text" class="form-control form-control-sm" name="search"
                                                value="{{ search_query }}" placeholder="Машина, лот, продукт...">
                                     </div>
-                                    <div class="col-lg-2 col-md-6">
-                                        <label for="macchina" class="form-label fw-semibold">
-                                            <i class="fas fa-cogs text-muted me-1"></i>Машина
-                                        </label>
-                                        <select class="form-select form-select-lg select2" id="macchina"
-                                                name="macchina">
-                                            <option value="">Все машины</option>
+                                    <div class="col-lg-2 col-md-3 col-sm-6">
+                                        <label class="form-label mb-1 small fw-bold">Машина</label>
+                                        <select class="form-select form-select-sm select2" name="macchina">
+                                            <option value="">Все</option>
                                             {% for machine in machines %}
                                                 {% if machine %}
                                                     <option value="{{ machine }}"
@@ -62,35 +48,26 @@
                                             {% endfor %}
                                         </select>
                                     </div>
-                                    <div class="col-lg-2 col-md-6">
-                                        <label for="date_from" class="form-label fw-semibold">
-                                            <i class="fas fa-calendar-alt text-muted me-1"></i>Дата с
-                                        </label>
-                                        <input type="date" class="form-control form-control-lg" id="date_from"
-                                               name="date_from" value="{{ date_from }}">
+                                    <div class="col-lg-2 col-md-3 col-sm-6">
+                                        <label class="form-label mb-1 small fw-bold">Дата с</label>
+                                        <input type="date" class="form-control form-control-sm" name="date_from"
+                                               value="{{ date_from }}">
                                     </div>
-                                    <div class="col-lg-2 col-md-6">
-                                        <label for="date_to" class="form-label fw-semibold">
-                                            <i class="fas fa-calendar-alt text-muted me-1"></i>Дата по
-                                        </label>
-                                        <input type="date" class="form-control form-control-lg" id="date_to"
-                                               name="date_to" value="{{ date_to }}">
+                                    <div class="col-lg-2 col-md-3 col-sm-6">
+                                        <label class="form-label mb-1 small fw-bold">Дата по</label>
+                                        <input type="date" class="form-control form-control-sm" name="date_to"
+                                               value="{{ date_to }}">
                                     </div>
-                                    <div class="col-lg-3 col-md-12">
-                                        <label class="form-label fw-semibold text-white">.</label>
-                                        <div class="d-grid gap-2 d-md-flex justify-content-md-start">
-                                            <button type="submit"
-                                                    class="btn btn-primary btn-lg flex-fill flex-md-grow-0 px-4">
-                                            <span class="filter-text">
-                                                <i class="fas fa-search me-2"></i>Применить
-                                            </span>
-                                                <span class="filter-loader d-none">
-                                                <i class="fas fa-spinner fa-spin me-2"></i>Поиск...
-                                            </span>
+                                    <div class="col-lg-3 col-md-6 col-sm-12">
+                                        <div class="d-flex gap-1">
+                                            <button type="submit" class="btn btn-primary btn-sm flex-fill">
+                                                <span class="filter-text"><i class="fas fa-search me-1"></i>Найти</span>
+                                                <span class="filter-loader d-none"><i
+                                                        class="fas fa-spinner fa-spin me-1"></i>Поиск...</span>
                                             </button>
                                             <a href="{% url 'reports:sup_storico_list' %}"
-                                               class="btn btn-outline-secondary btn-lg flex-fill flex-md-grow-0 px-4">
-                                                <i class="fas fa-times me-2"></i>Сбросить
+                                               class="btn btn-outline-secondary btn-sm">
+                                                <i class="fas fa-times"></i>
                                             </a>
                                         </div>
                                     </div>
@@ -101,43 +78,59 @@
                 </div>
             </div>
         </div>
-        <div class="row mb-4">
+        <div class="row mb-2">
             <div class="col-12">
-                <div class="card border-0 shadow-sm">
-                    <div class="card-body p-4">
+                <div class="card border shadow-sm">
+                    <div class="card-body py-2 px-3">
                         <div class="row align-items-center">
-                            <div class="col-lg-6 col-md-12 mb-3 mb-lg-0">
-                                <div class="d-flex align-items-center">
-                                    <div class="bg-primary bg-gradient rounded-circle p-3 me-3">
-                                        <i class="fas fa-chart-bar text-white fa-lg"></i>
+                            <div class="col-lg-8 col-md-12">
+                                <div class="row g-2">
+                                    <div class="col-md-4 col-sm-6">
+                                        <div class="d-flex align-items-center bg-light rounded p-2">
+                                            <div class="bg-primary rounded p-2 me-2">
+                                                <i class="fas fa-chart-bar text-white"></i>
+                                            </div>
+                                            <div>
+                                                <div class="fw-bold text-primary small">{{ filtered_count|default:0|intcomma }}</div>
+                                                <div class="text-muted" style="font-size: 0.75rem;">Всего записей</div>
+                                            </div>
+                                        </div>
                                     </div>
-                                    <div>
-                                        <h4 class="mb-1 fw-bold text-primary">{{ paginator.count|default:0|intcomma }}</h4>
-                                        <p class="mb-0 text-muted">Всего записей найдено</p>
-                                        {% if paginator.count > 0 %}
-                                            <small class="text-muted">
-                                                Страница {{ page_obj.number }} из {{ paginator.num_pages }}
-                                                (показано {{ records|length }})
-                                            </small>
-                                        {% endif %}
+                                    <div class="col-md-4 col-sm-6">
+                                        <div class="d-flex align-items-center bg-light rounded p-2">
+                                            <div class="bg-success rounded p-2 me-2">
+                                                <i class="fas fa-flask text-white"></i>
+                                            </div>
+                                            <div>
+                                                <div class="fw-bold text-success small">{{ total_dosato|floatformat:1|intcomma }}</div>
+                                                <div class="text-muted" style="font-size: 0.75rem;">Общий факт</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4 col-sm-6">
+                                        <div class="d-flex align-items-center bg-light rounded p-2">
+                                            <div class="bg-info rounded p-2 me-2">
+                                                <i class="fas fa-clipboard-list text-white"></i>
+                                            </div>
+                                            <div>
+                                                <div class="fw-bold text-info small">{{ total_da_dosare|floatformat:1|intcomma }}</div>
+                                                <div class="text-muted" style="font-size: 0.75rem;">Общий план</div>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
-                            <div class="col-lg-6 col-md-12">
-                                <div class="d-grid gap-2 d-md-flex justify-content-md-end">
-                                    <button class="btn btn-success btn-lg px-4" id="pdf-export-btn">
-                                    <span class="export-text">
-                                        <i class="fas fa-file-pdf me-2"></i>Экспорт PDF
-                                    </span>
-                                        <span class="export-loader d-none">
-                                        <i class="fas fa-spinner fa-spin me-2"></i>Генерация...
-                                    </span>
+                            <div class="col-lg-4 col-md-12 mt-2 mt-lg-0">
+                                <div class="d-flex gap-1 justify-content-end">
+                                    <button class="btn btn-outline-secondary btn-sm px-2" id="pdf-export-btn">
+                                        <span class="export-text"><i class="fas fa-file-pdf me-1"></i>PDF</span>
+                                        <span class="export-loader d-none"><i class="fas fa-spinner fa-spin me-1"></i>PDF...</span>
                                     </button>
-                                    <button class="btn btn-outline-success btn-lg px-4">
-                                        <i class="fas fa-file-excel me-2"></i>Экспорт Excel
+                                    <button class="btn btn-outline-success btn-sm px-2" id="excel-export-btn">
+                                        <i class="fas fa-file-excel me-1"></i>Excel
                                     </button>
-                                    <button class="btn btn-outline-primary btn-lg px-4">
-                                        <i class="fas fa-sync-alt me-2"></i>Обновить
+                                    <button class="btn btn-outline-primary btn-sm px-2" onclick="location.reload()">
+                                        <i class="fas fa-sync-alt"></i>
                                     </button>
                                 </div>
                             </div>
@@ -148,198 +141,123 @@
         </div>
         <div class="row">
             <div class="col-12">
-                <div class="card border-0 shadow-sm">
-                    <div class="card-header bg-white border-bottom py-3">
-                        <h5 class="card-title mb-0 fw-bold">
-                            <i class="fas fa-table text-primary me-2"></i>Записи дозирования
-                        </h5>
+                <div class="card border shadow-sm">
+                    <div class="card-header py-2 px-3">
+                        <h6 class="mb-0"><i class="fas fa-table text-primary me-1"></i>Записи дозирования</h6>
                     </div>
                     <div class="card-body p-0">
                         <div class="table-responsive">
-                            <table class="table table-hover table-striped-columns mb-0">
+                            <table class="table table-sm table-striped mb-0" style="font-size: 0.8rem;">
                                 <thead class="table-dark">
                                 <tr>
-                                    <th class="text-center" style="min-width: 80px;">
-                                        <i class="fas fa-hashtag me-1"></i>ID
-                                    </th>
-                                    <th style="min-width: 120px;">
-                                        <i class="fas fa-cogs me-1"></i>Машина
-                                    </th>
-                                    <th style="min-width: 140px;">
-                                        <i class="fas fa-boxes me-1"></i>Лот
-                                    </th>
-                                    <th style="min-width: 140px;">
-                                        <i class="fas fa-cube me-1"></i>Продукт
-                                    </th>
-                                    <th style="min-width: 120px;">
-                                        <i class="fas fa-tint me-1"></i>Резервуар
-                                    </th>
-                                    <th style="min-width: 180px;">
-                                        <i class="fas fa-calendar me-1"></i>Дата дозирования
-                                    </th>
-                                    <th style="min-width: 140px;">
-                                        <i class="fas fa-clock me-1"></i>Период
-                                    </th>
-                                    <th style="min-width: 160px;">
-                                        <i class="fas fa-balance-scale me-1"></i>Дозирование
-                                    </th>
-                                    <th class="text-center" style="min-width: 100px;">
-                                        <i class="fas fa-route me-1"></i>Линия
-                                    </th>
-                                    <th style="min-width: 140px;">
-                                        <i class="fas fa-receipt me-1"></i>SO/PO
-                                    </th>
-                                    <th style="min-width: 140px;">
-                                        <i class="fas fa-phone me-1"></i>Тип вызова
-                                    </th>
+                                    <th class="text-center py-2" style="min-width: 60px;">ID</th>
+                                    <th class="py-2" style="min-width: 80px;">Машина</th>
+                                    <th class="py-2" style="min-width: 100px;">Лот</th>
+                                    <th class="py-2" style="min-width: 100px;">Продукт</th>
+                                    <th class="py-2" style="min-width: 80px;">Резервуар</th>
+                                    <th class="py-2" style="min-width: 120px;">Дата дозирования</th>
+                                    <th class="py-2" style="min-width: 100px;">Период</th>
+                                    <th class="py-2" style="min-width: 120px;">Дозирование</th>
+                                    <th class="text-center py-2" style="min-width: 60px;">Линия</th>
+                                    <th class="py-2" style="min-width: 100px;">SO/PO</th>
+                                    <th class="py-2" style="min-width: 100px;">Тип вызова</th>
                                 </tr>
                                 </thead>
                                 <tbody>
                                 {% for record in records %}
-                                    <tr class="align-middle">
-                                        <td class="text-center">
-                                            <span class="badge bg-secondary fs-6 px-3 py-2">
-                                                {{ record.sup_storico_id }}
-                                            </span>
+                                    <tr style="line-height: 1.2;">
+                                        <td class="text-center py-2">
+                                            <span class="badge bg-secondary px-2 py-1"
+                                                  style="font-size: 0.7rem;">{{ record.sup_storico_id }}</span>
                                         </td>
-                                        <td>
+                                        <td class="py-2">
                                             {% if record.macchina %}
-                                                <span class="badge bg-primary fs-6 px-3 py-2">
-                                                    <i class="fas fa-cog me-1"></i>{{ record.macchina }}
-                                                </span>
-                                            {% else %}
-                                                <span class="text-muted">—</span>
-                                            {% endif %}
+                                                <span class="badge bg-primary px-2 py-1"
+                                                      style="font-size: 0.7rem;">{{ record.macchina }}</span>
+                                            {% else %}—{% endif %}
                                         </td>
-                                        <td>
+                                        <td class="py-2">
                                             {% if record.lotto %}
-                                                <div class="fw-bold text-dark">{{ record.lotto }}</div>
-                                            {% else %}
-                                                <span class="text-muted">—</span>
-                                            {% endif %}
+                                                <div class="fw-bold">{{ record.lotto }}</div>
+                                            {% else %}—{% endif %}
                                         </td>
-                                        <td>
+                                        <td class="py-2">
                                             {% if record.id_prodotto %}
-                                                <span class="badge bg-info text-dark fs-6 px-3 py-2">
-                                                    <i class="fas fa-cube me-1"></i>{{ record.id_prodotto }}
-                                                </span>
-                                            {% else %}
-                                                <span class="text-muted">—</span>
-                                            {% endif %}
+                                                <span class="badge bg-info px-2 py-1"
+                                                      style="font-size: 0.7rem;">{{ record.id_prodotto }}</span>
+                                            {% else %}—{% endif %}
                                         </td>
-                                        <td>
-                                            {% if record.tank %}
-                                                <div class="text-dark fw-semibold">
-                                                    <i class="fas fa-tint text-primary me-1"></i>{{ record.tank }}
-                                                </div>
-                                            {% else %}
-                                                <span class="text-muted">—</span>
-                                            {% endif %}
-                                        </td>
-                                        <td>
+                                        <td class="py-2">{{ record.tank|default:"—" }}</td>
+                                        <td class="py-2">
                                             {% if record.data_dosaggio %}
-                                                <div class="text-dark">
-                                                    <div class="fw-bold mb-1">
-                                                        <i class="fas fa-calendar-day text-primary me-1"></i>
-                                                        {{ record.data_dosaggio|date:"d.m.Y" }}
-                                                    </div>
-                                                    <small class="text-muted">
-                                                        <i class="fas fa-clock me-1"></i>
-                                                        {{ record.data_dosaggio|time:"H:i:s" }}
-                                                    </small>
-                                                </div>
-                                            {% else %}
-                                                <span class="text-muted">—</span>
-                                            {% endif %}
+                                                <div class="fw-bold"
+                                                     style="font-size: 0.75rem;">{{ record.data_dosaggio|date:"d.m.Y" }}</div>
+                                                <div class="text-muted"
+                                                     style="font-size: 0.7rem;">{{ record.data_dosaggio|time:"H:i" }}</div>
+                                            {% else %}—{% endif %}
                                         </td>
-                                        <td>
+                                        <td class="py-2">
                                             {% if record.data_inizio and record.data_fine %}
-                                                <div class="small">
-                                                    <div class="text-success mb-1">
-                                                        <i class="fas fa-play me-1"></i>{{ record.data_inizio|time:"H:i" }}
-                                                    </div>
-                                                    <div class="text-danger">
-                                                        <i class="fas fa-stop me-1"></i>{{ record.data_fine|time:"H:i" }}
-                                                    </div>
+                                                <div style="font-size: 0.7rem;">
+                                                    <div class="text-success">{{ record.data_inizio|time:"H:i" }}</div>
+                                                    <div class="text-danger">{{ record.data_fine|time:"H:i" }}</div>
                                                 </div>
-                                            {% else %}
-                                                <span class="text-muted">—</span>
-                                            {% endif %}
+                                            {% else %}—{% endif %}
                                         </td>
-                                        <td>
+                                        <td class="py-2">
                                             {% if record.da_dosare or record.dosato %}
-                                                <div>
-                                                    {% if record.da_dosare %}
-                                                        <div class="mb-1">
-                                                            <small class="text-muted d-block">План:</small>
-                                                            <span class="badge bg-light text-primary border border-primary">
-                                                                {{ record.da_dosare|floatformat:2 }}
-                                                            </span>
-                                                        </div>
-                                                    {% endif %}
-                                                    {% if record.dosato %}
-                                                        <div>
-                                                            <small class="text-muted d-block">Факт:</small>
-                                                            <span class="badge bg-success text-white">
-                                                                {{ record.dosato|floatformat:2 }}
-                                                            </span>
-                                                        </div>
-                                                    {% endif %}
-                                                </div>
-                                            {% else %}
-                                                <span class="text-muted">—</span>
-                                            {% endif %}
+                                                {% if record.da_dosare %}
+                                                    <div class="mb-1">
+                                                        <span class="text-muted"
+                                                              style="font-size: 0.65rem;">План:</span>
+                                                        <span class="badge bg-light text-primary border px-2 py-1"
+                                                              style="font-size: 0.7rem;">{{ record.da_dosare|floatformat:1 }}</span>
+                                                    </div>
+                                                {% endif %}
+                                                {% if record.dosato %}
+                                                    <div>
+                                                        <span class="text-muted"
+                                                              style="font-size: 0.65rem;">Факт:</span>
+                                                        <span class="badge bg-success px-2 py-1"
+                                                              style="font-size: 0.7rem;">{{ record.dosato|floatformat:1 }}</span>
+                                                    </div>
+                                                {% endif %}
+                                            {% else %}—{% endif %}
                                         </td>
-                                        <td class="text-center">
+                                        <td class="text-center py-2">
                                             {% if record.linea %}
-                                                <span class="badge bg-warning text-dark fs-6 px-3 py-2">
-                                                    <i class="fas fa-route me-1"></i>{{ record.linea }}
-                                                </span>
-                                            {% else %}
-                                                <span class="text-muted">—</span>
-                                            {% endif %}
+                                                <span class="badge bg-warning text-dark px-2 py-1"
+                                                      style="font-size: 0.7rem;">{{ record.linea }}</span>
+                                            {% else %}—{% endif %}
                                         </td>
-                                        <td>
+                                        <td class="py-2">
                                             {% if record.so_number or record.po_number %}
-                                                <div>
-                                                    {% if record.so_number %}
-                                                        <span class="badge bg-light text-dark border mb-1 d-block">
-                                                            <i class="fas fa-file-alt me-1"></i>SO: {{ record.so_number }}
-                                                        </span>
-                                                    {% endif %}
-                                                    {% if record.po_number %}
-                                                        <span class="badge bg-light text-dark border d-block">
-                                                            <i class="fas fa-receipt me-1"></i>PO: {{ record.po_number }}
-                                                        </span>
-                                                    {% endif %}
-                                                </div>
-                                            {% else %}
-                                                <span class="text-muted">—</span>
-                                            {% endif %}
+                                                {% if record.so_number %}
+                                                    <div class="mb-1">
+                                                        <span class="badge bg-light text-dark border px-2 py-1"
+                                                              style="font-size: 0.65rem;">SO:{{ record.so_number }}</span>
+                                                    </div>
+                                                {% endif %}
+                                                {% if record.po_number %}
+                                                    <div>
+                                                        <span class="badge bg-light text-dark border px-2 py-1"
+                                                              style="font-size: 0.65rem;">PO:{{ record.po_number }}</span>
+                                                    </div>
+                                                {% endif %}
+                                            {% else %}—{% endif %}
                                         </td>
-                                        <td>
-                                            {% if record.tipo_chiamata %}
-                                                <span class="badge bg-outline-secondary text-dark">
-                                                    <i class="fas fa-phone me-1"></i>{{ record.tipo_chiamata }}
-                                                </span>
-                                            {% else %}
-                                                <span class="text-muted">—</span>
-                                            {% endif %}
-                                        </td>
+                                        <td class="py-2"
+                                            style="font-size: 0.75rem;">{{ record.tipo_chiamata|default:"—" }}</td>
                                     </tr>
                                 {% empty %}
                                     <tr>
-                                        <td colspan="11" class="text-center py-5">
+                                        <td colspan="11" class="text-center py-4">
                                             <div class="text-muted">
-                                                <div class="mb-4">
-                                                    <i class="fas fa-search fa-4x opacity-25"></i>
-                                                </div>
-                                                <h4 class="mb-3">Записи не найдены</h4>
-                                                <p class="mb-4">Попробуйте изменить параметры фильтрации или очистить
-                                                    поиск</p>
+                                                <i class="fas fa-search fa-2x opacity-25 mb-2"></i>
+                                                <div>Записи не найдены</div>
                                                 <a href="{% url 'reports:sup_storico_list' %}"
-                                                   class="btn btn-outline-primary">
-                                                    <i class="fas fa-redo me-2"></i>Сбросить фильтры
+                                                   class="btn btn-outline-primary btn-sm mt-2">
+                                                    Сбросить фильтры
                                                 </a>
                                             </div>
                                         </td>
@@ -350,33 +268,30 @@
                         </div>
                     </div>
                     {% if is_paginated %}
-                        <div class="card-footer bg-white border-top">
+                        <div class="card-footer py-2 px-3">
                             <div class="row align-items-center">
                                 <div class="col-md-6">
-                                    <div class="text-muted">
-                                        <small>
-                                            Показано {{ page_obj.start_index }}-{{ page_obj.end_index }}
-                                            из {{ paginator.count|intcomma }} записей
-                                        </small>
-                                    </div>
+                                    <small class="text-muted">
+                                        {{ page_obj.start_index }}-{{ page_obj.end_index }}
+                                        из {{ paginator.count|intcomma }}
+                                    </small>
                                 </div>
                                 <div class="col-md-6">
-                                    <nav aria-label="Навигация по страницам" class="d-flex justify-content-end">
-                                        <ul class="pagination pagination-lg mb-0">
+                                    <nav class="d-flex justify-content-end">
+                                        <ul class="pagination pagination-sm mb-0">
                                             {% if page_obj.has_previous %}
                                                 <li class="page-item">
-                                                    <a class="page-link"
-                                                       href="?page=1{% if search_query %}&search={{ search_query }}{% endif %}{% if selected_macchina %}&macchina={{ selected_macchina }}{% endif %}{% if date_from %}&date_from={{ date_from }}{% endif %}{% if date_to %}&date_to={{ date_to }}{% endif %}"
-                                                       title="Первая страница">
+                                                    <a class="page-link py-1 px-2"
+                                                       href="?page=1{% if search_query %}&search={{ search_query }}{% endif %}{% if selected_macchina %}&macchina={{ selected_macchina }}{% endif %}{% if date_from %}&date_from={{ date_from }}{% endif %}{% if date_to %}&date_to={{ date_to }}{% endif %}">
                                                         <i class="fas fa-angle-double-left"></i>
                                                     </a>
                                                 </li>
                                                 <li class="page-item">
-                                                    <a class="page-link" href="?page=
+                                                    <a class="page-link py-1 px-2" href="?page=
 
 
-                                                            {{ page_obj.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if selected_macchina %}&macchina={{ selected_macchina }}{% endif %}{% if date_from %}&date_from={{ date_from }}{% endif %}{% if date_to %}&date_to={{ date_to }}{% endif %}"
-                                                       title="Предыдущая">
+
+                                                            {{ page_obj.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if selected_macchina %}&macchina={{ selected_macchina }}{% endif %}{% if date_from %}&date_from={{ date_from }}{% endif %}{% if date_to %}&date_to={{ date_to }}{% endif %}">
                                                         <i class="fas fa-angle-left"></i>
                                                     </a>
                                                 </li>
@@ -385,11 +300,12 @@
                                             {% for num in paginator.page_range %}
                                                 {% if page_obj.number == num %}
                                                     <li class="page-item active">
-                                                        <span class="page-link fw-bold">{{ num }}</span>
+                                                        <span class="page-link py-1 px-2">{{ num }}</span>
                                                     </li>
                                                 {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
                                                     <li class="page-item">
-                                                        <a class="page-link" href="?page=
+                                                        <a class="page-link py-1 px-2" href="?page=
+
 
 
                                                                 {{ num }}{% if search_query %}&search={{ search_query }}{% endif %}{% if selected_macchina %}&macchina={{ selected_macchina }}{% endif %}{% if date_from %}&date_from={{ date_from }}{% endif %}{% if date_to %}&date_to={{ date_to }}{% endif %}">{{ num }}</a>
@@ -399,20 +315,20 @@
 
                                             {% if page_obj.has_next %}
                                                 <li class="page-item">
-                                                    <a class="page-link" href="?page=
+                                                    <a class="page-link py-1 px-2" href="?page=
 
 
-                                                            {{ page_obj.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if selected_macchina %}&macchina={{ selected_macchina }}{% endif %}{% if date_from %}&date_from={{ date_from }}{% endif %}{% if date_to %}&date_to={{ date_to }}{% endif %}"
-                                                       title="Следующая">
+
+                                                            {{ page_obj.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if selected_macchina %}&macchina={{ selected_macchina }}{% endif %}{% if date_from %}&date_from={{ date_from }}{% endif %}{% if date_to %}&date_to={{ date_to }}{% endif %}">
                                                         <i class="fas fa-angle-right"></i>
                                                     </a>
                                                 </li>
                                                 <li class="page-item">
-                                                    <a class="page-link" href="?page=
+                                                    <a class="page-link py-1 px-2" href="?page=
 
 
-                                                            {{ paginator.num_pages }}{% if search_query %}&search={{ search_query }}{% endif %}{% if selected_macchina %}&macchina={{ selected_macchina }}{% endif %}{% if date_from %}&date_from={{ date_from }}{% endif %}{% if date_to %}&date_to={{ date_to }}{% endif %}"
-                                                       title="Последняя страница">
+
+                                                            {{ paginator.num_pages }}{% if search_query %}&search={{ search_query }}{% endif %}{% if selected_macchina %}&macchina={{ selected_macchina }}{% endif %}{% if date_from %}&date_from={{ date_from }}{% endif %}{% if date_to %}&date_to={{ date_to }}{% endif %}">
                                                         <i class="fas fa-angle-double-right"></i>
                                                     </a>
                                                 </li>
@@ -431,10 +347,8 @@
          style="z-index: 9999;">
         <div class="d-flex justify-content-center align-items-center h-100">
             <div class="text-center text-white">
-                <div class="spinner-border mb-3" style="width: 3rem; height: 3rem;" role="status">
-                    <span class="visually-hidden">Загрузка...</span>
-                </div>
-                <h5>Обработка запроса...</h5>
+                <div class="spinner-border mb-2" role="status"></div>
+                <div>Обработка...</div>
             </div>
         </div>
     </div>
@@ -443,118 +357,85 @@
     <script>
         $(document).ready(function () {
             $('.select2').select2({
-                placeholder: 'Выберите машину...',
+                placeholder: 'Выберите...',
                 allowClear: true,
                 width: '100%',
-                theme: 'bootstrap-5',
-                language: {
-                    noResults: function () {
-                        return "Результаты не найдены";
-                    }
-                }
+                theme: 'bootstrap-5'
             });
+
             $('#filter-form').on('submit', function () {
                 $('.filter-text').addClass('d-none');
                 $('.filter-loader').removeClass('d-none');
-                $('#loading-overlay').removeClass('d-none').hide().fadeIn(300);
+                $('#loading-overlay').removeClass('d-none').hide().fadeIn(200);
                 return true;
             });
+
             function getUrlParams() {
                 return window.location.search;
             }
+
             $('#pdf-export-btn').on('click', function (e) {
                 e.preventDefault();
                 $('.export-text').addClass('d-none');
                 $('.export-loader').removeClass('d-none');
-                
                 const exportUrl = "{% url 'reports:sup_storico_pdf' %}" + getUrlParams();
-
                 setTimeout(function () {
                     window.location.href = exportUrl;
                     $('.export-text').removeClass('d-none');
                     $('.export-loader').addClass('d-none');
-                }, 1000);
+                }, 800);
             });
 
-            $('.btn:contains("Экспорт Excel")').on('click', function (e) {
+            $('#excel-export-btn').on('click', function (e) {
                 e.preventDefault();
                 const $this = $(this);
                 const originalText = $this.html();
-
-                $this.html('<i class="fas fa-spinner fa-spin me-2"></i>Генерация...');
-
+                $this.html('<i class="fas fa-spinner fa-spin me-1"></i>Excel...');
                 const exportUrl = "{% url 'reports:sup_storico_excel' %}" + getUrlParams();
-
                 setTimeout(function () {
                     window.location.href = exportUrl;
                     $this.html(originalText);
-                }, 1000);
+                }, 800);
             });
 
-            $('.btn:contains("Обновить")').on('click', function (e) {
-                e.preventDefault();
-                location.reload();
-            });
-
-            $('#loading-overlay').fadeOut(300);
-            
-            $('[title]').tooltip({
-                placement: 'top',
-                trigger: 'hover'
-            });
+            $('#loading-overlay').fadeOut(200);
         });
     </script>
-    <style>
-        .bg-gradient-primary {
-            background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
-        }
 
-        .table-striped-columns > :not(caption) > tr > :nth-child(even) {
-            background-color: rgba(0, 0, 0, 0.02);
+    <style>
+        .table-sm th, .table-sm td {
+            padding: 0.25rem;
+            vertical-align: middle;
         }
 
         .card {
-            transition: all 0.3s ease;
-        }
-
-        .card:hover {
-            transform: translateY(-2px);
-        }
-
-        .page-link {
-            padding: 0.75rem 1rem;
-            font-weight: 500;
-        }
-
-        .page-item.active .page-link {
-            background-color: #007bff;
-            border-color: #007bff;
-            box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+            border-radius: 0.375rem;
         }
 
         .badge {
             font-weight: 500;
-            letter-spacing: 0.5px;
         }
 
-        .btn-lg {
-            padding: 0.75rem 1.5rem;
-            font-weight: 500;
+        .btn-sm {
+            font-size: 0.8rem;
+            padding: 0.25rem 0.75rem;
         }
 
-        .table th {
-            font-weight: 600;
-            text-transform: uppercase;
-            font-size: 0.85rem;
-            letter-spacing: 0.5px;
+        .form-control-sm, .form-select-sm {
+            font-size: 0.8rem;
+            padding: 0.25rem 0.5rem;
         }
 
-        .form-control-lg, .form-select-lg {
-            border-radius: 0.5rem;
+        .page-link {
+            font-size: 0.8rem;
         }
 
         .shadow-sm {
             box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075) !important;
+        }
+
+        .table-striped > tbody > tr:nth-of-type(odd) > td {
+            background-color: rgba(0, 0, 0, 0.02);
         }
     </style>
 {% endblock %}
