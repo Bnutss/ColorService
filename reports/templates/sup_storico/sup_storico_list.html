@@ -32,7 +32,8 @@
                                     <div class="col-lg-3 col-md-4 col-sm-6">
                                         <label class="form-label mb-1 small fw-bold">Поиск</label>
                                         <input type="text" class="form-control form-control-sm" name="search"
-                                               value="{{ search_query }}" placeholder="Машина, лот, продукт...">
+                                               value="{{ search_query }}"
+                                               placeholder="Машина, лот, продукт, наименование...">
                                     </div>
                                     <div class="col-lg-2 col-md-3 col-sm-6">
                                         <label class="form-label mb-1 small fw-bold">Машина</label>
@@ -153,7 +154,7 @@
                                     <th class="text-center py-2" style="min-width: 60px;">ID</th>
                                     <th class="py-2" style="min-width: 80px;">Машина</th>
                                     <th class="py-2" style="min-width: 100px;">Лот</th>
-                                    <th class="py-2" style="min-width: 100px;">Продукт</th>
+                                    <th class="py-2" style="min-width: 150px;">Продукт</th>
                                     <th class="py-2" style="min-width: 80px;">Резервуар</th>
                                     <th class="py-2" style="min-width: 120px;">Дата дозирования</th>
                                     <th class="py-2" style="min-width: 100px;">Период</th>
@@ -185,6 +186,15 @@
                                             {% if record.id_prodotto %}
                                                 <span class="badge bg-info px-2 py-1"
                                                       style="font-size: 0.7rem;">{{ record.id_prodotto }}</span>
+                                                {% if record.color_service_info %}
+                                                    <div class="small text-muted mt-1" style="font-size: 0.65rem;">
+                                                        {{ record.color_service_info.title }}
+                                                        {% if record.color_service_info.type %}
+                                                            <span class="badge bg-light text-dark border ms-1"
+                                                                  style="font-size: 0.6rem;">{{ record.color_service_info.type }}</span>
+                                                        {% endif %}
+                                                    </div>
+                                                {% endif %}
                                             {% else %}—{% endif %}
                                         </td>
                                         <td class="py-2">{{ record.tank|default:"—" }}</td>
@@ -289,8 +299,6 @@
                                                 <li class="page-item">
                                                     <a class="page-link py-1 px-2" href="?page=
 
-
-
                                                             {{ page_obj.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if selected_macchina %}&macchina={{ selected_macchina }}{% endif %}{% if date_from %}&date_from={{ date_from }}{% endif %}{% if date_to %}&date_to={{ date_to }}{% endif %}">
                                                         <i class="fas fa-angle-left"></i>
                                                     </a>
@@ -306,8 +314,6 @@
                                                     <li class="page-item">
                                                         <a class="page-link py-1 px-2" href="?page=
 
-
-
                                                                 {{ num }}{% if search_query %}&search={{ search_query }}{% endif %}{% if selected_macchina %}&macchina={{ selected_macchina }}{% endif %}{% if date_from %}&date_from={{ date_from }}{% endif %}{% if date_to %}&date_to={{ date_to }}{% endif %}">{{ num }}</a>
                                                     </li>
                                                 {% endif %}
@@ -317,16 +323,12 @@
                                                 <li class="page-item">
                                                     <a class="page-link py-1 px-2" href="?page=
 
-
-
                                                             {{ page_obj.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if selected_macchina %}&macchina={{ selected_macchina }}{% endif %}{% if date_from %}&date_from={{ date_from }}{% endif %}{% if date_to %}&date_to={{ date_to }}{% endif %}">
                                                         <i class="fas fa-angle-right"></i>
                                                     </a>
                                                 </li>
                                                 <li class="page-item">
                                                     <a class="page-link py-1 px-2" href="?page=
-
-
 
                                                             {{ paginator.num_pages }}{% if search_query %}&search={{ search_query }}{% endif %}{% if selected_macchina %}&macchina={{ selected_macchina }}{% endif %}{% if date_from %}&date_from={{ date_from }}{% endif %}{% if date_to %}&date_to={{ date_to }}{% endif %}">
                                                         <i class="fas fa-angle-double-right"></i>

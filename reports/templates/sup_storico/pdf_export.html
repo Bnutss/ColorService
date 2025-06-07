@@ -61,6 +61,12 @@
             <td>
                 {% if record.id_prodotto %}
                     <span class="badge bg-info">{{ record.id_prodotto }}</span>
+                    {% if record.color_service_info %}
+                        <div class="product-title">
+                            {{ record.color_service_info.title }}
+                            {% if record.color_service_info.type %} ({{ record.color_service_info.type }}){% endif %}
+                        </div>
+                    {% endif %}
                 {% else %}—{% endif %}
             </td>
             <td>{{ record.tank|default:"—" }}</td>

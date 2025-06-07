@@ -34,6 +34,27 @@ class SupStorico(models.Model):
     def __str__(self):
         return f"Дозирование {self.id_prodotto or 'N/A'} - {self.data_dosaggio or 'Без даты'}"
 
+    def get_product_info(self):
+        """Получает информацию о продукте из ColorServices"""
+        if self.id_prodotto:
+            try:
+                return ColorServices.objects.get(product_name=self.id_prodotto)
+            except ColorServices.DoesNotExist:
+                return None
+        return None
+
+    @property
+    def product_title(self):
+        """Возвращает наименование продукта из ColorServices"""
+        product_info = self.get_product_info()
+        return product_info.title if product_info else None
+
+    @property
+    def product_type(self):
+        """Возвращает тип продукта из ColorServices"""
+        product_info = self.get_product_info()
+        return product_info.type if product_info else None
+
 
 class ColorServices(models.Model):
     product_name = models.CharField(max_length=255, verbose_name="Название продукта")

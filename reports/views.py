@@ -3,7 +3,7 @@ import logging
 from django.http import JsonResponse, HttpResponseForbidden, HttpResponseBadRequest
 from django.views.decorators.csrf import csrf_exempt
 from django.conf import settings
-from .models import SupStorico
+from .models import SupStorico, ColorServices
 from django.views.generic import ListView
 from django.db.models import Q, Sum
 from django.http import HttpResponse
@@ -81,14 +81,22 @@ class SupStoricoListView(ListView):
     def get_queryset(self):
         queryset = SupStorico.objects.all()
         search_query = self.request.GET.get('search')
+
         if search_query:
+            # Поиск по связанным продуктам ColorServices
+            color_services_ids = ColorServices.objects.filter(
+                Q(title__icontains=search_query) |
+                Q(type__icontains=search_query)
+            ).values_list('product_name', flat=True)
+
             queryset = queryset.filter(
                 Q(macchina__icontains=search_query) |
                 Q(lotto__icontains=search_query) |
                 Q(id_prodotto__icontains=search_query) |
                 Q(tank__icontains=search_query) |
                 Q(so_number__icontains=search_query) |
-                Q(po_number__icontains=search_query)
+                Q(po_number__icontains=search_query) |
+                Q(id_prodotto__in=color_services_ids)
             )
 
         macchina_filter = self.request.GET.get('macchina')
@@ -108,6 +116,22 @@ class SupStoricoListView(ListView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         filtered_queryset = self.get_queryset()
+
+        # Создаем словарь ColorServices для оптимизации
+        color_services_dict = {}
+        for cs in ColorServices.objects.all():
+            color_services_dict[cs.product_name] = {
+                'title': cs.title,
+                'type': cs.type
+            }
+
+        # Добавляем информацию о продуктах к каждой записи
+        records_with_products = []
+        for record in context['records']:
+            record.color_service_info = color_services_dict.get(record.id_prodotto, None)
+            records_with_products.append(record)
+        context['records'] = records_with_products
+
         total_dosato = filtered_queryset.aggregate(
             total_dosato=Sum('dosato')
         )['total_dosato'] or 0
@@ -135,12 +159,27 @@ class SupStoricoPDFExportView(SupStoricoListView):
 
     def get(self, request, *args, **kwargs):
         queryset = self.get_queryset()
+
+        # Получаем ColorServices данные
+        color_services_dict = {}
+        for cs in ColorServices.objects.all():
+            color_services_dict[cs.product_name] = {
+                'title': cs.title,
+                'type': cs.type
+            }
+
+        # Добавляем информацию о продуктах к записям
+        records_with_products = []
+        for record in queryset:
+            record.color_service_info = color_services_dict.get(record.id_prodotto, None)
+            records_with_products.append(record)
+
         total_dosato = queryset.aggregate(total_dosato=Sum('dosato'))['total_dosato'] or 0
         total_da_dosare = queryset.aggregate(total_da_dosare=Sum('da_dosare'))['total_da_dosare'] or 0
         records_with_dosato = queryset.filter(dosato__isnull=False).count()
 
         context = {
-            'records': queryset,
+            'records': records_with_products,
             'total_count': queryset.count(),
             'total_dosato': total_dosato,
             'total_da_dosare': total_da_dosare,
@@ -206,6 +245,11 @@ class SupStoricoPDFExportView(SupStoricoListView):
                 border-radius: 3px;
                 border: 1px solid #ddd;
             }
+            .product-title {
+                font-size: 8px;
+                color: #666;
+                margin-top: 2px;
+            }
         ''', font_config=font_config)
 
         pdf = html.write_pdf(stylesheets=[css], font_config=font_config)
@@ -221,12 +265,23 @@ class SupStoricoExcelExportView(SupStoricoListView):
 
     def get(self, request, *args, **kwargs):
         queryset = self.get_queryset()
+
+        # Получаем ColorServices данные
+        color_services_dict = {}
+        for cs in ColorServices.objects.all():
+            color_services_dict[cs.product_name] = {
+                'title': cs.title,
+                'type': cs.type
+            }
+
         total_dosato = queryset.aggregate(total_dosato=Sum('dosato'))['total_dosato'] or 0
         total_da_dosare = queryset.aggregate(total_da_dosare=Sum('da_dosare'))['total_da_dosare'] or 0
         records_with_dosato = queryset.filter(dosato__isnull=False).count()
+
         wb = openpyxl.Workbook()
         ws = wb.active
         ws.title = "История дозирования"
+
         header_font = Font(bold=True, color="FFFFFF")
         header_fill = PatternFill(start_color="366092", end_color="366092", fill_type="solid")
         header_alignment = Alignment(horizontal="center", vertical="center")
@@ -240,6 +295,7 @@ class SupStoricoExcelExportView(SupStoricoListView):
             bottom=Side(style='thin')
         )
 
+        # Статистика в верхней части
         ws.cell(row=1, column=1, value="СТАТИСТИКА ДОЗИРОВАНИЯ").font = stats_font
         ws.cell(row=1, column=1).fill = stats_fill
         ws.merge_cells('A1:E1')
@@ -251,10 +307,11 @@ class SupStoricoExcelExportView(SupStoricoListView):
         ws.cell(row=3, column=2, value=float(total_da_dosare))
         ws.cell(row=3, column=3, value="Общий факт (досато):")
         ws.cell(row=3, column=4, value=float(total_dosato))
+
         start_row = 5
 
         headers = [
-            'ID', 'Машина', 'Лот', 'Продукт', 'Резервуар',
+            'ID', 'Машина', 'Лот', 'Продукт', 'Наименование продукта', 'Тип продукта', 'Резервуар',
             'Дата дозирования', 'Время дозирования', 'Дата начала', 'Время начала',
             'Дата окончания', 'Время окончания', 'Количество для дозирования',
             'Дозированное количество', 'Линия', 'SO номер', 'PO номер', 'Тип вызова'
@@ -268,11 +325,16 @@ class SupStoricoExcelExportView(SupStoricoListView):
             cell.border = border
 
         for row, record in enumerate(queryset, start_row + 1):
+            # Получаем информацию о продукте
+            product_info = color_services_dict.get(record.id_prodotto, {})
+
             data = [
                 record.sup_storico_id,
                 record.macchina or '',
                 record.lotto or '',
                 record.id_prodotto or '',
+                product_info.get('title', ''),  # Наименование продукта
+                product_info.get('type', ''),  # Тип продукта
                 record.tank or '',
                 record.data_dosaggio.date() if record.data_dosaggio else '',
                 record.data_dosaggio.time() if record.data_dosaggio else '',
@@ -292,11 +354,12 @@ class SupStoricoExcelExportView(SupStoricoListView):
                 cell = ws.cell(row=row, column=col, value=value)
                 cell.border = border
 
-                if col in [1, 12, 13, 14]:
+                if col in [1, 14, 15, 16]:  # ID, количества, линия
                     cell.alignment = Alignment(horizontal="right")
-                elif col in [6, 7, 8, 9, 10, 11]:
+                elif col in [8, 9, 10, 11, 12, 13]:  # даты и времена
                     cell.alignment = Alignment(horizontal="center")
 
+        # Автоширина колонок
         for column in ws.columns:
             max_length = 0
             column_letter = get_column_letter(column[0].column)
@@ -309,6 +372,7 @@ class SupStoricoExcelExportView(SupStoricoListView):
             adjusted_width = min(max_length + 2, 50)
             ws.column_dimensions[column_letter].width = adjusted_width
 
+        # Информация об экспорте
         info_row = len(queryset) + start_row + 2
         ws.cell(row=info_row, column=1, value="Параметры экспорта:").font = Font(bold=True)
 
