@@ -33,3 +33,16 @@ class SupStorico(models.Model):
 
     def __str__(self):
         return f"Дозирование {self.id_prodotto or 'N/A'} - {self.data_dosaggio or 'Без даты'}"
+
+
+class ColorServices(models.Model):
+    product_name = models.CharField(max_length=255, verbose_name="Название продукта")
+    title = models.CharField(max_length=255, verbose_name="Наименование")
+    type = models.CharField(max_length=100, verbose_name="Тип")
+
+    def __str__(self):
+        return f"{self.product_name} - {self.title} ({self.type})"
+
+    class Meta:
+        verbose_name = "Продукт ColorServices"
+        verbose_name_plural = "Продукты ColorServices"
