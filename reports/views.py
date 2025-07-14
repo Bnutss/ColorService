@@ -417,17 +417,17 @@ def import_data(request):
 
         def safe_float(value):
             if value in (None, ""):
-                return 0
+                return 0.0
             try:
                 return float(value)
             except:
-                return 0
+                return 0.0
 
         def safe_int(value):
             if value in (None, ""):
                 return 0
             try:
-                return int(value)
+                return int(float(value))
             except:
                 return 0
 
@@ -437,44 +437,53 @@ def import_data(request):
             return str(value)
 
         for row in tuz_data:
-            timestamp = parse_datetime(row.get("Time_stamp"))
-            if TuzRecord.objects.filter(istek_no=row.get("GIDEN_ISTEK_NO"), timestamp=timestamp).exists():
-                continue
+            try:
+                timestamp = parse_datetime(row.get("Time_stamp"))
+                if TuzRecord.objects.filter(istek_no=safe_int(row.get("GIDEN_ISTEK_NO")), timestamp=timestamp).exists():
+                    continue
 
-            TuzRecord.objects.create(
-                timestamp=timestamp,
-                istek_no=safe_int(row.get("GIDEN_ISTEK_NO")),
-                recete_no=safe_float(row.get("GIDEN_RECETE_NO")),
-                makine_no=safe_int(row.get("GIDEN_MAKINE_NO")),
-                ilv_rzv=safe_str(row.get("GIDEN_ILV_RZV")),
-                ik_hacim=safe_float(row.get("GIDEN_IK_HACIM")),
-                miktar=safe_float(row.get("GIDEN_MIKTAR")),
-                istek_yeri=safe_str(row.get("GIDEN_ISTEK_YERI")),
-                makine_adi=safe_str(row.get("MAKINE_ADI")),
-                miktar_kg=safe_float(row.get("GIDEN_MIKTAR_KG")),
-            )
-            tuz_created += 1
+                TuzRecord.objects.create(
+                    timestamp=timestamp,
+                    istek_no=safe_int(row.get("GIDEN_ISTEK_NO")),
+                    recete_no=safe_float(row.get("GIDEN_RECETE_NO")),
+                    makine_no=safe_int(row.get("GIDEN_MAKINE_NO")),
+                    ilv_rzv=safe_str(row.get("GIDEN_ILV_RZV")),
+                    ik_hacim=safe_float(row.get("GIDEN_IK_HACIM")),
+                    miktar=safe_float(row.get("GIDEN_MIKTAR")),
+                    istek_yeri=safe_str(row.get("GIDEN_ISTEK_YERI")),
+                    makine_adi=safe_str(row.get("MAKINE_ADI")),
+                    miktar_kg=safe_float(row.get("GIDEN_MIKTAR_KG")),
+                )
+                tuz_created += 1
+            except Exception as e:
+                print("❌ TUZ error:", e)
+                traceback.print_exc()
 
         for row in soda_data:
-            timestamp = parse_datetime(row.get("Time_stamp"))
-            if SodaRecord.objects.filter(istek_no=row.get("GIDEN_ISTEK_NO"), timestamp=timestamp).exists():
-                continue
+            try:
+                timestamp = parse_datetime(row.get("Time_stamp"))
+                if SodaRecord.objects.filter(istek_no=safe_int(row.get("GIDEN_ISTEK_NO")),
+                                             timestamp=timestamp).exists():
+                    continue
 
-            SodaRecord.objects.create(
-                timestamp=timestamp,
-                istek_no=safe_int(row.get("GIDEN_ISTEK_NO")),
-                recete_no=safe_float(row.get("GIDEN_RECETE_NO")),
-                makine_no=safe_int(row.get("GIDEN_MAKINE_NO")),
-                ilv_rzv=safe_str(row.get("GIDEN_ILV_RZV")),
-                ik_hacim=safe_float(row.get("GIDEN_IK_HACIM")),
-                miktar=safe_float(row.get("GIDEN_MIKTAR")),
-                istek_yeri=safe_str(row.get("GIDEN_ISTEK_YERI")),
-                makine_adi=safe_str(row.get("MAKINE_ADI")),
-                miktar_kg=safe_float(row.get("GIDEN_MIKTAR_KG")),
-                miktar_ml=safe_float(row.get("GIDEN_MIKTAR_ml")),
-                miktar_gr=safe_float(row.get("GIDEN_MIKTAR_gr")),
-            )
-            soda_created += 1
+                SodaRecord.objects.create(
+                    timestamp=timestamp,
+                    istek_no=safe_int(row.get("GIDEN_ISTEK_NO")),
+                    recete_no=safe_float(row.get("GIDEN_RECETE_NO")),
+                    makine_no=safe_int(row.get("GIDEN_MAKINE_NO")),
+                    ilv_rzv=safe_str(row.get("GIDEN_ILV_RZV")),
+                    ik_hacim=safe_float(row.get("GIDEN_IK_HACIM")),
+                    miktar=safe_float(row.get("GIDEN_MIKTAR")),
+                    istek_yeri=safe_str(row.get("GIDEN_ISTEK_YERI")),
+                    makine_adi=safe_str(row.get("MAKINE_ADI")),
+                    miktar_kg=safe_float(row.get("GIDEN_MIKTAR_KG")),
+                    miktar_ml=safe_float(row.get("GIDEN_MIKTAR_ml")),
+                    miktar_gr=safe_float(row.get("GIDEN_MIKTAR_gr")),
+                )
+                soda_created += 1
+            except Exception as e:
+                print("❌ SODA error:", e)
+                traceback.print_exc()
 
         return JsonResponse({
             "status": "success",
@@ -483,4 +492,6 @@ def import_data(request):
         })
 
     except Exception as e:
+        print("🔥 Fatal error in import_data:", e)
+        traceback.print_exc()
         return JsonResponse({"error": str(e)}, status=500)
