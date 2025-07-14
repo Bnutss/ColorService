@@ -72,7 +72,7 @@ class ColorServices(models.Model):
 class TuzRecord(models.Model):
     timestamp = models.DateTimeField()
     istek_no = models.IntegerField()
-    recete_no = models.IntegerField()
+    recete_no = models.FloatField()
     makine_no = models.IntegerField()
     ilv_rzv = models.CharField(max_length=100)
     ik_hacim = models.FloatField()
@@ -91,7 +91,7 @@ class TuzRecord(models.Model):
 class SodaRecord(models.Model):
     timestamp = models.DateTimeField()
     istek_no = models.IntegerField()
-    recete_no = models.IntegerField()
+    recete_no = models.FloatField()
     makine_no = models.IntegerField()
     ilv_rzv = models.CharField(max_length=100)
     ik_hacim = models.FloatField()
