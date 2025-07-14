@@ -158,7 +158,7 @@ class SupStoricoListView(LoginRequiredMixin, ListView):
         return context
 
 
-class SupStoricoPDFExportView(LoginRequiredMixin, SupStoricoListView):
+class SupStoricoPDFExportView(SupStoricoListView):
     """PDF экспорт с теми же фильтрами"""
 
     def get(self, request, *args, **kwargs):
@@ -262,7 +262,7 @@ class SupStoricoPDFExportView(LoginRequiredMixin, SupStoricoListView):
         return response
 
 
-class SupStoricoExcelExportView(LoginRequiredMixin, SupStoricoListView):
+class SupStoricoExcelExportView(SupStoricoListView):
     """Excel экспорт с теми же фильтрами"""
 
     def get(self, request, *args, **kwargs):
@@ -563,7 +563,7 @@ class TuzRecordListView(LoginRequiredMixin, ListView):
         return context
 
 
-class TuzRecordPDFExportView(LoginRequiredMixin, TuzRecordListView):
+class TuzRecordPDFExportView(TuzRecordListView):
     def get(self, request, *args, **kwargs):
         queryset = self.get_queryset()
 
@@ -651,7 +651,7 @@ class TuzRecordPDFExportView(LoginRequiredMixin, TuzRecordListView):
         return response
 
 
-class TuzRecordExcelExportView(LoginRequiredMixin, TuzRecordListView):
+class TuzRecordExcelExportView(TuzRecordListView):
     def get(self, request, *args, **kwargs):
         queryset = self.get_queryset()
 
@@ -780,7 +780,7 @@ class TuzRecordExcelExportView(LoginRequiredMixin, TuzRecordListView):
         return response
 
 
-class SodaRecordListView(ListView):
+class SodaRecordListView(LoginRequiredMixin, ListView):
     model = SodaRecord
     template_name = 'soda_record/soda_record_list.html'
     context_object_name = 'records'
@@ -845,7 +845,7 @@ class SodaRecordListView(ListView):
         return context
 
 
-class SodaRecordPDFExportView(LoginRequiredMixin, SodaRecordListView):
+class SodaRecordPDFExportView(SodaRecordListView):
     def get(self, request, *args, **kwargs):
         queryset = self.get_queryset()
 
@@ -937,7 +937,7 @@ class SodaRecordPDFExportView(LoginRequiredMixin, SodaRecordListView):
         return response
 
 
-class SodaRecordExcelExportView(LoginRequiredMixin, SodaRecordListView):
+class SodaRecordExcelExportView(SodaRecordListView):
     def get(self, request, *args, **kwargs):
         queryset = self.get_queryset()
 
