@@ -462,8 +462,8 @@ def import_data(request):
                 )
                 tuz_created += 1
             except Exception as e:
-                logger.error(f"❌ TUZ error: {e}")
-                logger.debug(traceback.format_exc())
+                logger.error("Ошибка при обработке строки: %s", row)
+                logger.exception("Traceback:")
 
         for row in soda_data:
             try:
