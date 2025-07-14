@@ -34,13 +34,11 @@ document.querySelector('.login-form').addEventListener('submit', function (e) {
     const button = this.querySelector('.btn-submit');
     const overlay = document.querySelector('.overlay');
 
-    // Предотвращаем повторную отправку, если кнопка уже в состоянии загрузки
     if (button.classList.contains('loading')) {
         e.preventDefault();
         return;
     }
 
-    // Активируем состояние загрузки
     button.classList.add('loading');
     overlay.classList.add('active');
 });
