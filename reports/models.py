@@ -70,40 +70,44 @@ class ColorServices(models.Model):
 
 
 class TuzRecord(models.Model):
-    timestamp = models.DateTimeField()
-    istek_no = models.IntegerField()
-    recete_no = models.FloatField()
-    makine_no = models.IntegerField()
-    ilv_rzv = models.CharField(max_length=100)
-    ik_hacim = models.FloatField()
-    miktar = models.FloatField()
-    istek_yeri = models.CharField(max_length=100)
-    makine_adi = models.CharField(max_length=100)
-    miktar_kg = models.FloatField()
+    timestamp = models.DateTimeField(verbose_name="Время записи")
+    istek_no = models.IntegerField(verbose_name="Номер заявки")
+    recete_no = models.FloatField(verbose_name="Номер рецепта")
+    makine_no = models.IntegerField(verbose_name="Номер машины")
+    ilv_rzv = models.CharField(max_length=100, verbose_name="ИЛВ РЗВ")
+    ik_hacim = models.FloatField(verbose_name="ИК объем")
+    miktar = models.FloatField(verbose_name="Количество")
+    istek_yeri = models.CharField(max_length=100, verbose_name="Место заявки")
+    makine_adi = models.CharField(max_length=100, verbose_name="Название машины")
+    miktar_kg = models.FloatField(verbose_name="Количество (кг)")
 
     class Meta:
         unique_together = ('istek_no', 'timestamp')
+        verbose_name = "Запись соли"
+        verbose_name_plural = "Записи соли"
 
     def __str__(self):
         return f"TUZ {self.istek_no} @ {self.timestamp}"
 
 
 class SodaRecord(models.Model):
-    timestamp = models.DateTimeField()
-    istek_no = models.IntegerField()
-    recete_no = models.FloatField()
-    makine_no = models.IntegerField()
-    ilv_rzv = models.CharField(max_length=100)
-    ik_hacim = models.FloatField()
-    miktar = models.FloatField()
-    istek_yeri = models.CharField(max_length=100)
-    makine_adi = models.CharField(max_length=100)
-    miktar_kg = models.FloatField()
-    miktar_ml = models.FloatField(null=True, blank=True)
-    miktar_gr = models.FloatField(null=True, blank=True)
+    timestamp = models.DateTimeField(verbose_name="Время записи")
+    istek_no = models.IntegerField(verbose_name="Номер заявки")
+    recete_no = models.FloatField(verbose_name="Номер рецепта")
+    makine_no = models.IntegerField(verbose_name="Номер машины")
+    ilv_rzv = models.CharField(max_length=100, verbose_name="ИЛВ РЗВ")
+    ik_hacim = models.FloatField(verbose_name="ИК объем")
+    miktar = models.FloatField(verbose_name="Количество")
+    istek_yeri = models.CharField(max_length=100, verbose_name="Место заявки")
+    makine_adi = models.CharField(max_length=100, verbose_name="Название машины")
+    miktar_kg = models.FloatField(verbose_name="Количество (кг)")
+    miktar_ml = models.FloatField(null=True, blank=True, verbose_name="Количество (мл)")
+    miktar_gr = models.FloatField(null=True, blank=True, verbose_name="Количество (г)")
 
     class Meta:
         unique_together = ('istek_no', 'timestamp')
+        verbose_name = "Запись соды"
+        verbose_name_plural = "Записи соды"
 
     def __str__(self):
         return f"SODA {self.istek_no} @ {self.timestamp}"
