@@ -3,7 +3,7 @@ import logging
 from django.http import JsonResponse, HttpResponseForbidden, HttpResponseBadRequest
 from django.views.decorators.csrf import csrf_exempt
 from django.conf import settings
-from .models import SupStorico, ColorServices
+from .models import SupStorico, ColorServices, TuzRecord, SodaRecord
 from django.views.generic import ListView
 from django.db.models import Q, Sum
 from django.http import HttpResponse
@@ -15,6 +15,7 @@ from weasyprint import HTML, CSS
 from weasyprint.text.fonts import FontConfiguration
 import io
 from datetime import datetime
+from django.utils.dateparse import parse_datetime
 
 logger = logging.getLogger('django')
 
@@ -399,3 +400,66 @@ class SupStoricoExcelExportView(SupStoricoListView):
         response['Content-Disposition'] = f'attachment; filename="{filename}"'
 
         return response
+
+
+@csrf_exempt
+def import_data(request):
+    if request.method != "POST":
+        return JsonResponse({"error": "Only POST allowed"}, status=405)
+
+    try:
+        data = json.loads(request.body)
+        tuz_data = data.get("tuz", [])
+        soda_data = data.get("soda", [])
+
+        tuz_created = 0
+        soda_created = 0
+
+        for row in tuz_data:
+            timestamp = parse_datetime(row["Time_stamp"])
+            if TuzRecord.objects.filter(istek_no=row["GIDEN_ISTEK_NO"], timestamp=timestamp).exists():
+                continue  # дубликат — пропускаем
+
+            TuzRecord.objects.create(
+                timestamp=timestamp,
+                istek_no=row["GIDEN_ISTEK_NO"],
+                recete_no=row["GIDEN_RECETE_NO"],
+                makine_no=row["GIDEN_MAKINE_NO"],
+                ilv_rzv=row["GIDEN_ILV_RZV"],
+                ik_hacim=row["GIDEN_IK_HACIM"],
+                miktar=row["GIDEN_MIKTAR"],
+                istek_yeri=row["GIDEN_ISTEK_YERI"],
+                makine_adi=row["MAKINE_ADI"],
+                miktar_kg=row["GIDEN_MIKTAR_KG"]
+            )
+            tuz_created += 1
+
+        for row in soda_data:
+            timestamp = parse_datetime(row["Time_stamp"])
+            if SodaRecord.objects.filter(istek_no=row["GIDEN_ISTEK_NO"], timestamp=timestamp).exists():
+                continue
+
+            SodaRecord.objects.create(
+                timestamp=timestamp,
+                istek_no=row["GIDEN_ISTEK_NO"],
+                recete_no=row["GIDEN_RECETE_NO"],
+                makine_no=row["GIDEN_MAKINE_NO"],
+                ilv_rzv=row["GIDEN_ILV_RZV"],
+                ik_hacim=row["GIDEN_IK_HACIM"],
+                miktar=row["GIDEN_MIKTAR"],
+                istek_yeri=row["GIDEN_ISTEK_YERI"],
+                makine_adi=row["MAKINE_ADI"],
+                miktar_kg=row["GIDEN_MIKTAR_KG"],
+                miktar_ml=row.get("GIDEN_MIKTAR_ml"),
+                miktar_gr=row.get("GIDEN_MIKTAR_gr")
+            )
+            soda_created += 1
+
+        return JsonResponse({
+            "status": "success",
+            "tuz_imported": tuz_created,
+            "soda_imported": soda_created
+        })
+
+    except Exception as e:
+        return JsonResponse({"error": str(e)}, status=500)

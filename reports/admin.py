@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import SupStorico, ColorServices
+from .models import SupStorico, ColorServices, TuzRecord, SodaRecord
 from django import forms
 from django.db import transaction
 from django.urls import path
@@ -89,3 +89,34 @@ class ColorServicesAdmin(admin.ModelAdmin):
     def import_excel_action(self, modeladmin, request, queryset):
         # Перенаправляем на страницу импорта
         return redirect('admin:colorservices-import-excel')
+
+
+@admin.register(TuzRecord)
+class TuzRecordAdmin(admin.ModelAdmin):
+    list_display = (
+        'timestamp',
+        'istek_no',
+        'recete_no',
+        'makine_no',
+        'miktar_kg',
+        'makine_adi',
+    )
+    search_fields = ('istek_no', 'makine_adi')
+    list_filter = ('timestamp', 'makine_no')
+    ordering = ('-timestamp',)
+
+
+@admin.register(SodaRecord)
+class SodaRecordAdmin(admin.ModelAdmin):
+    list_display = (
+        'timestamp',
+        'istek_no',
+        'recete_no',
+        'makine_no',
+        'miktar_kg',
+        'miktar_ml',
+        'miktar_gr',
+    )
+    search_fields = ('istek_no', 'makine_adi')
+    list_filter = ('timestamp', 'makine_no')
+    ordering = ('-timestamp',)

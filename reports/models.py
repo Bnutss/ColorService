@@ -67,3 +67,43 @@ class ColorServices(models.Model):
     class Meta:
         verbose_name = "Продукт ColorServices"
         verbose_name_plural = "Продукты ColorServices"
+
+
+class TuzRecord(models.Model):
+    timestamp = models.DateTimeField()
+    istek_no = models.IntegerField()
+    recete_no = models.IntegerField()
+    makine_no = models.IntegerField()
+    ilv_rzv = models.CharField(max_length=100)
+    ik_hacim = models.FloatField()
+    miktar = models.FloatField()
+    istek_yeri = models.CharField(max_length=100)
+    makine_adi = models.CharField(max_length=100)
+    miktar_kg = models.FloatField()
+
+    class Meta:
+        unique_together = ('istek_no', 'timestamp')
+
+    def __str__(self):
+        return f"TUZ {self.istek_no} @ {self.timestamp}"
+
+
+class SodaRecord(models.Model):
+    timestamp = models.DateTimeField()
+    istek_no = models.IntegerField()
+    recete_no = models.IntegerField()
+    makine_no = models.IntegerField()
+    ilv_rzv = models.CharField(max_length=100)
+    ik_hacim = models.FloatField()
+    miktar = models.FloatField()
+    istek_yeri = models.CharField(max_length=100)
+    makine_adi = models.CharField(max_length=100)
+    miktar_kg = models.FloatField()
+    miktar_ml = models.FloatField(null=True, blank=True)
+    miktar_gr = models.FloatField(null=True, blank=True)
+
+    class Meta:
+        unique_together = ('istek_no', 'timestamp')
+
+    def __str__(self):
+        return f"SODA {self.istek_no} @ {self.timestamp}"
