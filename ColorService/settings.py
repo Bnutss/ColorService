@@ -132,6 +132,12 @@ LOGGING = {
             'filename': os.path.join(BASE_DIR, 'django_errors.log'),
             'formatter': 'verbose',
         },
+        'import_log': {
+            'level': 'DEBUG',
+            'class': 'logging.FileHandler',
+            'filename': os.path.join(BASE_DIR, 'import_log.log'),
+            'formatter': 'verbose',
+        },
     },
     'loggers': {
         'django': {
@@ -139,8 +145,8 @@ LOGGING = {
             'level': 'DEBUG',
             'propagate': True,
         },
-        'slb_logger': {
-            'handlers': ['file_info', 'file_error'],
+        'reports.import_log': {
+            'handlers': ['import_log'],
             'level': 'DEBUG',
             'propagate': False,
         },

@@ -16,8 +16,12 @@ from weasyprint.text.fonts import FontConfiguration
 import io
 from datetime import datetime
 from django.utils.dateparse import parse_datetime
+import traceback
 
-logger = logging.getLogger('django')
+logger = logging.getLogger("reports.import_log")
+
+logger.info("Начало импорта")
+logger.error("Ошибка при обработке строки")
 
 
 @csrf_exempt
@@ -436,6 +440,8 @@ def import_data(request):
                 return ""
             return str(value)
 
+        logger.info(f"📥 TUZ rows: {len(tuz_data)} | SODA rows: {len(soda_data)}")
+
         for row in tuz_data:
             try:
                 timestamp = parse_datetime(row.get("Time_stamp"))
@@ -456,8 +462,8 @@ def import_data(request):
                 )
                 tuz_created += 1
             except Exception as e:
-                print("❌ TUZ error:", e)
-                traceback.print_exc()
+                logger.error(f"❌ TUZ error: {e}")
+                logger.debug(traceback.format_exc())
 
         for row in soda_data:
             try:
@@ -482,8 +488,10 @@ def import_data(request):
                 )
                 soda_created += 1
             except Exception as e:
-                print("❌ SODA error:", e)
-                traceback.print_exc()
+                logger.error(f"❌ SODA error: {e}")
+                logger.debug(traceback.format_exc())
+
+        logger.info(f"✅ Imported: {tuz_created} TUZ | {soda_created} SODA")
 
         return JsonResponse({
             "status": "success",
@@ -492,6 +500,6 @@ def import_data(request):
         })
 
     except Exception as e:
-        print("🔥 Fatal error in import_data:", e)
-        traceback.print_exc()
+        logger.critical(f"🔥 Fatal import error: {e}")
+        logger.debug(traceback.format_exc())
         return JsonResponse({"error": str(e)}, status=500)
