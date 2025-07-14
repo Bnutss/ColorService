@@ -5,7 +5,6 @@ from django.views.decorators.csrf import csrf_exempt
 from django.conf import settings
 from .models import SupStorico, ColorServices, TuzRecord, SodaRecord
 from django.views.generic import ListView
-from django.db.models import Q, Sum
 from django.http import HttpResponse
 from django.template.loader import get_template
 import openpyxl
@@ -17,6 +16,9 @@ import io
 from datetime import datetime
 from django.utils.dateparse import parse_datetime
 import traceback
+from django.db.models import Q, Sum, Avg, Count
+from django.utils import timezone
+import pytz
 
 logger = logging.getLogger("reports.import_log")
 
@@ -88,7 +90,6 @@ class SupStoricoListView(ListView):
         search_query = self.request.GET.get('search')
 
         if search_query:
-            # Поиск по связанным продуктам ColorServices
             color_services_ids = ColorServices.objects.filter(
                 Q(title__icontains=search_query) |
                 Q(type__icontains=search_query)
@@ -121,8 +122,6 @@ class SupStoricoListView(ListView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         filtered_queryset = self.get_queryset()
-
-        # Создаем словарь ColorServices для оптимизации
         color_services_dict = {}
         for cs in ColorServices.objects.all():
             color_services_dict[cs.product_name] = {
@@ -130,7 +129,6 @@ class SupStoricoListView(ListView):
                 'type': cs.type
             }
 
-        # Добавляем информацию о продуктах к каждой записи
         records_with_products = []
         for record in context['records']:
             record.color_service_info = color_services_dict.get(record.id_prodotto, None)
@@ -165,7 +163,6 @@ class SupStoricoPDFExportView(SupStoricoListView):
     def get(self, request, *args, **kwargs):
         queryset = self.get_queryset()
 
-        # Получаем ColorServices данные
         color_services_dict = {}
         for cs in ColorServices.objects.all():
             color_services_dict[cs.product_name] = {
@@ -173,7 +170,6 @@ class SupStoricoPDFExportView(SupStoricoListView):
                 'type': cs.type
             }
 
-        # Добавляем информацию о продуктах к записям
         records_with_products = []
         for record in queryset:
             record.color_service_info = color_services_dict.get(record.id_prodotto, None)
@@ -503,3 +499,576 @@ def import_data(request):
         logger.critical(f"🔥 Fatal import error: {e}")
         logger.debug(traceback.format_exc())
         return JsonResponse({"error": str(e)}, status=500)
+
+
+class TuzRecordListView(ListView):
+    model = TuzRecord
+    template_name = 'tuz_record/tuz_record_list.html'
+    context_object_name = 'records'
+    paginate_by = 25
+
+    def get_queryset(self):
+        queryset = TuzRecord.objects.all().order_by('-timestamp')
+        search_query = self.request.GET.get('search')
+
+        if search_query:
+            queryset = queryset.filter(
+                Q(istek_no__icontains=search_query) |
+                Q(makine_adi__icontains=search_query) |
+                Q(ilv_rzv__icontains=search_query) |
+                Q(istek_yeri__icontains=search_query) |
+                Q(makine_no__icontains=search_query)
+            )
+
+        makine_filter = self.request.GET.get('makine')
+        if makine_filter:
+            queryset = queryset.filter(makine_adi=makine_filter)
+
+        date_from = self.request.GET.get('date_from')
+        date_to = self.request.GET.get('date_to')
+
+        if date_from:
+            queryset = queryset.filter(timestamp__date__gte=date_from)
+        if date_to:
+            queryset = queryset.filter(timestamp__date__lte=date_to)
+
+        return queryset
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        filtered_queryset = self.get_queryset()
+
+        stats = filtered_queryset.aggregate(
+            total_miktar=Sum('miktar'),
+            total_miktar_kg=Sum('miktar_kg'),
+            total_ik_hacim=Sum('ik_hacim'),
+            avg_miktar=Avg('miktar'),
+            record_count=Count('id')
+        )
+
+        context.update({
+            'machines': TuzRecord.objects.values_list('makine_adi', flat=True).distinct().order_by('makine_adi'),
+            'search_query': self.request.GET.get('search', ''),
+            'selected_makine': self.request.GET.get('makine', ''),
+            'date_from': self.request.GET.get('date_from', ''),
+            'date_to': self.request.GET.get('date_to', ''),
+            'total_miktar': stats['total_miktar'] or 0,
+            'total_miktar_kg': stats['total_miktar_kg'] or 0,
+            'total_ik_hacim': stats['total_ik_hacim'] or 0,
+            'avg_miktar': stats['avg_miktar'] or 0,
+            'filtered_count': filtered_queryset.count(),
+        })
+
+        return context
+
+
+class TuzRecordPDFExportView(TuzRecordListView):
+    def get(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+
+        stats = queryset.aggregate(
+            total_miktar=Sum('miktar'),
+            total_miktar_kg=Sum('miktar_kg'),
+            total_ik_hacim=Sum('ik_hacim'),
+            avg_miktar=Avg('miktar')
+        )
+
+        context = {
+            'records': queryset,
+            'total_count': queryset.count(),
+            'total_miktar': stats['total_miktar'] or 0,
+            'total_miktar_kg': stats['total_miktar_kg'] or 0,
+            'total_ik_hacim': stats['total_ik_hacim'] or 0,
+            'avg_miktar': stats['avg_miktar'] or 0,
+            'search_query': request.GET.get('search', ''),
+            'selected_makine': request.GET.get('makine', ''),
+            'date_from': request.GET.get('date_from', ''),
+            'date_to': request.GET.get('date_to', ''),
+            'export_date': datetime.now(),
+        }
+
+        template = get_template('tuz_record/pdf_export.html')
+        html_string = template.render(context)
+        font_config = FontConfiguration()
+        html = HTML(string=html_string)
+        css = CSS(string='''
+            @page {
+                size: A4 landscape;
+                margin: 1cm;
+            }
+            body {
+                font-family: DejaVu Sans;
+                font-size: 10px;
+            }
+            .table {
+                width: 100%;
+                border-collapse: collapse;
+            }
+            .table th, .table td {
+                border: 1px solid #ddd;
+                padding: 4px;
+                text-align: left;
+            }
+            .table th {
+                background-color: #f8f9fa;
+                font-weight: bold;
+            }
+            .badge {
+                padding: 2px 6px;
+                border-radius: 3px;
+                font-size: 9px;
+            }
+            .bg-primary { background-color: #007bff; color: white; }
+            .bg-success { background-color: #28a745; color: white; }
+            .bg-info { background-color: #17a2b8; color: white; }
+            .bg-warning { background-color: #ffc107; color: black; }
+            .text-center { text-align: center; }
+            .fw-bold { font-weight: bold; }
+            .small { font-size: 8px; }
+            .stats-box {
+                background-color: #f8f9fa;
+                border: 1px solid #dee2e6;
+                padding: 10px;
+                margin: 10px 0;
+                border-radius: 5px;
+            }
+            .stat-item {
+                display: inline-block;
+                margin-right: 20px;
+                padding: 5px 10px;
+                background-color: white;
+                border-radius: 3px;
+                border: 1px solid #ddd;
+            }
+        ''', font_config=font_config)
+
+        pdf = html.write_pdf(stylesheets=[css], font_config=font_config)
+        response = HttpResponse(pdf, content_type='application/pdf')
+        filename = f'tuz_record_export_{datetime.now().strftime("%Y%m%d_%H%M%S")}.pdf'
+        response['Content-Disposition'] = f'attachment; filename="{filename}"'
+
+        return response
+
+
+class TuzRecordExcelExportView(TuzRecordListView):
+    def get(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+
+        stats = queryset.aggregate(
+            total_miktar=Sum('miktar'),
+            total_miktar_kg=Sum('miktar_kg'),
+            total_ik_hacim=Sum('ik_hacim'),
+            avg_miktar=Avg('miktar')
+        )
+
+        wb = openpyxl.Workbook()
+        ws = wb.active
+        ws.title = "Записи соли"
+
+        header_font = Font(bold=True, color="FFFFFF")
+        header_fill = PatternFill(start_color="366092", end_color="366092", fill_type="solid")
+        header_alignment = Alignment(horizontal="center", vertical="center")
+        stats_font = Font(bold=True, color="FFFFFF")
+        stats_fill = PatternFill(start_color="28a745", end_color="28a745", fill_type="solid")
+
+        border = Border(
+            left=Side(style='thin'),
+            right=Side(style='thin'),
+            top=Side(style='thin'),
+            bottom=Side(style='thin')
+        )
+
+        ws.cell(row=1, column=1, value="СТАТИСТИКА ЗАПИСЕЙ СОЛИ").font = stats_font
+        ws.cell(row=1, column=1).fill = stats_fill
+        ws.merge_cells('A1:F1')
+        ws.cell(row=2, column=1, value="Общее количество записей:")
+        ws.cell(row=2, column=2, value=queryset.count())
+        ws.cell(row=2, column=3, value="Общее количество (мл):")
+        ws.cell(row=2, column=4, value=float(stats['total_miktar'] or 0))
+        ws.cell(row=3, column=1, value="Общий вес (кг):")
+        ws.cell(row=3, column=2, value=float(stats['total_miktar_kg'] or 0))
+        ws.cell(row=3, column=3, value="Общий ИК объем:")
+        ws.cell(row=3, column=4, value=float(stats['total_ik_hacim'] or 0))
+
+        start_row = 5
+
+        headers = [
+            'ID записи', 'Время записи', 'Номер заявки', 'Номер рецепта', 'Номер машины',
+            'Название машины', 'ИЛВ РЗВ', 'ИК объем', 'Количество (мл)', 'Количество (кг)', 'Место заявки'
+        ]
+
+        for col, header in enumerate(headers, 1):
+            cell = ws.cell(row=start_row, column=col, value=header)
+            cell.font = header_font
+            cell.fill = header_fill
+            cell.alignment = header_alignment
+            cell.border = border
+
+        tashkent_tz = pytz.timezone('Asia/Tashkent')
+
+        for row, record in enumerate(queryset, start_row + 1):
+            if record.timestamp:
+                if record.timestamp.tzinfo:
+                    local_timestamp = record.timestamp.astimezone(tashkent_tz).replace(tzinfo=None)
+                else:
+                    local_timestamp = record.timestamp
+            else:
+                local_timestamp = record.timestamp
+
+            data = [
+                record.id,
+                local_timestamp,
+                record.istek_no,
+                record.recete_no,
+                record.makine_no,
+                record.makine_adi or '',
+                record.ilv_rzv or '',
+                record.ik_hacim or '',
+                record.miktar or '',
+                record.miktar_kg or '',
+                record.istek_yeri or '',
+            ]
+
+            for col, value in enumerate(data, 1):
+                cell = ws.cell(row=row, column=col, value=value)
+                cell.border = border
+
+                if col in [1, 3, 4, 5, 8, 9, 10]:
+                    cell.alignment = Alignment(horizontal="right")
+                elif col == 2:
+                    cell.alignment = Alignment(horizontal="center")
+
+        for column in ws.columns:
+            max_length = 0
+            column_letter = get_column_letter(column[0].column)
+            for cell in column:
+                try:
+                    if len(str(cell.value)) > max_length:
+                        max_length = len(str(cell.value))
+                except:
+                    pass
+            adjusted_width = min(max_length + 2, 50)
+            ws.column_dimensions[column_letter].width = adjusted_width
+
+        info_row = len(queryset) + start_row + 2
+        ws.cell(row=info_row, column=1, value="Параметры экспорта:").font = Font(bold=True)
+
+        if request.GET.get('search'):
+            ws.cell(row=info_row + 1, column=1, value=f"Поиск: {request.GET.get('search')}")
+        if request.GET.get('makine'):
+            ws.cell(row=info_row + 2, column=1, value=f"Машина: {request.GET.get('makine')}")
+        if request.GET.get('date_from'):
+            ws.cell(row=info_row + 3, column=1, value=f"Дата с: {request.GET.get('date_from')}")
+        if request.GET.get('date_to'):
+            ws.cell(row=info_row + 4, column=1, value=f"Дата по: {request.GET.get('date_to')}")
+
+        export_date_local = timezone.now().astimezone(tashkent_tz).replace(tzinfo=None)
+        ws.cell(row=info_row + 5, column=1, value=f"Дата экспорта: {export_date_local.strftime('%d.%m.%Y %H:%M:%S')}")
+
+        output = io.BytesIO()
+        wb.save(output)
+        output.seek(0)
+
+        response = HttpResponse(
+            output.read(),
+            content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        )
+        filename = f'tuz_record_export_{export_date_local.strftime("%Y%m%d_%H%M%S")}.xlsx'
+        response['Content-Disposition'] = f'attachment; filename="{filename}"'
+
+        return response
+
+
+class SodaRecordListView(ListView):
+    model = SodaRecord
+    template_name = 'soda_record/soda_record_list.html'
+    context_object_name = 'records'
+    paginate_by = 25
+
+    def get_queryset(self):
+        queryset = SodaRecord.objects.all().order_by('-timestamp')
+        search_query = self.request.GET.get('search')
+
+        if search_query:
+            queryset = queryset.filter(
+                Q(istek_no__icontains=search_query) |
+                Q(makine_adi__icontains=search_query) |
+                Q(ilv_rzv__icontains=search_query) |
+                Q(istek_yeri__icontains=search_query) |
+                Q(makine_no__icontains=search_query)
+            )
+
+        makine_filter = self.request.GET.get('makine')
+        if makine_filter:
+            queryset = queryset.filter(makine_adi=makine_filter)
+
+        date_from = self.request.GET.get('date_from')
+        date_to = self.request.GET.get('date_to')
+
+        if date_from:
+            queryset = queryset.filter(timestamp__date__gte=date_from)
+        if date_to:
+            queryset = queryset.filter(timestamp__date__lte=date_to)
+
+        return queryset
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        filtered_queryset = self.get_queryset()
+
+        stats = filtered_queryset.aggregate(
+            total_miktar=Sum('miktar'),
+            total_miktar_kg=Sum('miktar_kg'),
+            total_miktar_ml=Sum('miktar_ml'),
+            total_miktar_gr=Sum('miktar_gr'),
+            total_ik_hacim=Sum('ik_hacim'),
+            avg_miktar=Avg('miktar'),
+            record_count=Count('id')
+        )
+
+        context.update({
+            'machines': SodaRecord.objects.values_list('makine_adi', flat=True).distinct().order_by('makine_adi'),
+            'search_query': self.request.GET.get('search', ''),
+            'selected_makine': self.request.GET.get('makine', ''),
+            'date_from': self.request.GET.get('date_from', ''),
+            'date_to': self.request.GET.get('date_to', ''),
+            'total_miktar': stats['total_miktar'] or 0,
+            'total_miktar_kg': stats['total_miktar_kg'] or 0,
+            'total_miktar_ml': stats['total_miktar_ml'] or 0,
+            'total_miktar_gr': stats['total_miktar_gr'] or 0,
+            'total_ik_hacim': stats['total_ik_hacim'] or 0,
+            'avg_miktar': stats['avg_miktar'] or 0,
+            'filtered_count': filtered_queryset.count(),
+        })
+
+        return context
+
+
+class SodaRecordPDFExportView(SodaRecordListView):
+    def get(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+
+        stats = queryset.aggregate(
+            total_miktar=Sum('miktar'),
+            total_miktar_kg=Sum('miktar_kg'),
+            total_miktar_ml=Sum('miktar_ml'),
+            total_miktar_gr=Sum('miktar_gr'),
+            total_ik_hacim=Sum('ik_hacim'),
+            avg_miktar=Avg('miktar')
+        )
+
+        context = {
+            'records': queryset,
+            'total_count': queryset.count(),
+            'total_miktar': stats['total_miktar'] or 0,
+            'total_miktar_kg': stats['total_miktar_kg'] or 0,
+            'total_miktar_ml': stats['total_miktar_ml'] or 0,
+            'total_miktar_gr': stats['total_miktar_gr'] or 0,
+            'total_ik_hacim': stats['total_ik_hacim'] or 0,
+            'avg_miktar': stats['avg_miktar'] or 0,
+            'search_query': request.GET.get('search', ''),
+            'selected_makine': request.GET.get('makine', ''),
+            'date_from': request.GET.get('date_from', ''),
+            'date_to': request.GET.get('date_to', ''),
+            'export_date': datetime.now(),
+        }
+
+        template = get_template('soda_record/pdf_export.html')
+        html_string = template.render(context)
+        font_config = FontConfiguration()
+        html = HTML(string=html_string)
+        css = CSS(string='''
+            @page {
+                size: A4 landscape;
+                margin: 1cm;
+            }
+            body {
+                font-family: DejaVu Sans;
+                font-size: 10px;
+            }
+            .table {
+                width: 100%;
+                border-collapse: collapse;
+            }
+            .table th, .table td {
+                border: 1px solid #ddd;
+                padding: 4px;
+                text-align: left;
+            }
+            .table th {
+                background-color: #f8f9fa;
+                font-weight: bold;
+            }
+            .badge {
+                padding: 2px 6px;
+                border-radius: 3px;
+                font-size: 9px;
+            }
+            .bg-primary { background-color: #007bff; color: white; }
+            .bg-success { background-color: #28a745; color: white; }
+            .bg-info { background-color: #17a2b8; color: white; }
+            .bg-warning { background-color: #ffc107; color: black; }
+            .text-center { text-align: center; }
+            .fw-bold { font-weight: bold; }
+            .small { font-size: 8px; }
+            .stats-box {
+                background-color: #f8f9fa;
+                border: 1px solid #dee2e6;
+                padding: 10px;
+                margin: 10px 0;
+                border-radius: 5px;
+            }
+            .stat-item {
+                display: inline-block;
+                margin-right: 20px;
+                padding: 5px 10px;
+                background-color: white;
+                border-radius: 3px;
+                border: 1px solid #ddd;
+            }
+        ''', font_config=font_config)
+
+        pdf = html.write_pdf(stylesheets=[css], font_config=font_config)
+        response = HttpResponse(pdf, content_type='application/pdf')
+        filename = f'soda_record_export_{datetime.now().strftime("%Y%m%d_%H%M%S")}.pdf'
+        response['Content-Disposition'] = f'attachment; filename="{filename}"'
+
+        return response
+
+
+class SodaRecordExcelExportView(SodaRecordListView):
+    def get(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+
+        stats = queryset.aggregate(
+            total_miktar=Sum('miktar'),
+            total_miktar_kg=Sum('miktar_kg'),
+            total_miktar_ml=Sum('miktar_ml'),
+            total_miktar_gr=Sum('miktar_gr'),
+            total_ik_hacim=Sum('ik_hacim'),
+            avg_miktar=Avg('miktar')
+        )
+
+        wb = openpyxl.Workbook()
+        ws = wb.active
+        ws.title = "Записи соды"
+
+        header_font = Font(bold=True, color="FFFFFF")
+        header_fill = PatternFill(start_color="366092", end_color="366092", fill_type="solid")
+        header_alignment = Alignment(horizontal="center", vertical="center")
+        stats_font = Font(bold=True, color="FFFFFF")
+        stats_fill = PatternFill(start_color="28a745", end_color="28a745", fill_type="solid")
+
+        border = Border(
+            left=Side(style='thin'),
+            right=Side(style='thin'),
+            top=Side(style='thin'),
+            bottom=Side(style='thin')
+        )
+
+        ws.cell(row=1, column=1, value="СТАТИСТИКА ЗАПИСЕЙ СОДЫ").font = stats_font
+        ws.cell(row=1, column=1).fill = stats_fill
+        ws.merge_cells('A1:G1')
+        ws.cell(row=2, column=1, value="Общее количество записей:")
+        ws.cell(row=2, column=2, value=queryset.count())
+        ws.cell(row=2, column=3, value="Общее количество (мл):")
+        ws.cell(row=2, column=4, value=float(stats['total_miktar'] or 0))
+        ws.cell(row=3, column=1, value="Общий вес (кг):")
+        ws.cell(row=3, column=2, value=float(stats['total_miktar_kg'] or 0))
+        ws.cell(row=3, column=3, value="Общий ИК объем:")
+        ws.cell(row=3, column=4, value=float(stats['total_ik_hacim'] or 0))
+        ws.cell(row=4, column=1, value="Количество (мл доп):")
+        ws.cell(row=4, column=2, value=float(stats['total_miktar_ml'] or 0))
+        ws.cell(row=4, column=3, value="Количество (г):")
+        ws.cell(row=4, column=4, value=float(stats['total_miktar_gr'] or 0))
+
+        start_row = 6
+
+        headers = [
+            'ID записи', 'Время записи', 'Номер заявки', 'Номер рецепта', 'Номер машины',
+            'Название машины', 'ИЛВ РЗВ', 'ИК объем', 'Количество (мл)', 'Количество (кг)',
+            'Количество (мл доп)', 'Количество (г)', 'Место заявки'
+        ]
+
+        for col, header in enumerate(headers, 1):
+            cell = ws.cell(row=start_row, column=col, value=header)
+            cell.font = header_font
+            cell.fill = header_fill
+            cell.alignment = header_alignment
+            cell.border = border
+
+        tashkent_tz = pytz.timezone('Asia/Tashkent')
+
+        for row, record in enumerate(queryset, start_row + 1):
+            if record.timestamp:
+                if record.timestamp.tzinfo:
+                    local_timestamp = record.timestamp.astimezone(tashkent_tz).replace(tzinfo=None)
+                else:
+                    local_timestamp = record.timestamp
+            else:
+                local_timestamp = record.timestamp
+
+            data = [
+                record.id,
+                local_timestamp,
+                record.istek_no,
+                record.recete_no,
+                record.makine_no,
+                record.makine_adi or '',
+                record.ilv_rzv or '',
+                record.ik_hacim or '',
+                record.miktar or '',
+                record.miktar_kg or '',
+                record.miktar_ml or '',
+                record.miktar_gr or '',
+                record.istek_yeri or '',
+            ]
+
+            for col, value in enumerate(data, 1):
+                cell = ws.cell(row=row, column=col, value=value)
+                cell.border = border
+
+                if col in [1, 3, 4, 5, 8, 9, 10, 11, 12]:
+                    cell.alignment = Alignment(horizontal="right")
+                elif col == 2:
+                    cell.alignment = Alignment(horizontal="center")
+
+        for column in ws.columns:
+            max_length = 0
+            column_letter = get_column_letter(column[0].column)
+            for cell in column:
+                try:
+                    if len(str(cell.value)) > max_length:
+                        max_length = len(str(cell.value))
+                except:
+                    pass
+            adjusted_width = min(max_length + 2, 50)
+            ws.column_dimensions[column_letter].width = adjusted_width
+
+        info_row = len(queryset) + start_row + 2
+        ws.cell(row=info_row, column=1, value="Параметры экспорта:").font = Font(bold=True)
+
+        if request.GET.get('search'):
+            ws.cell(row=info_row + 1, column=1, value=f"Поиск: {request.GET.get('search')}")
+        if request.GET.get('makine'):
+            ws.cell(row=info_row + 2, column=1, value=f"Машина: {request.GET.get('makine')}")
+        if request.GET.get('date_from'):
+            ws.cell(row=info_row + 3, column=1, value=f"Дата с: {request.GET.get('date_from')}")
+        if request.GET.get('date_to'):
+            ws.cell(row=info_row + 4, column=1, value=f"Дата по: {request.GET.get('date_to')}")
+
+        export_date_local = timezone.now().astimezone(tashkent_tz).replace(tzinfo=None)
+        ws.cell(row=info_row + 5, column=1, value=f"Дата экспорта: {export_date_local.strftime('%d.%m.%Y %H:%M:%S')}")
+
+        output = io.BytesIO()
+        wb.save(output)
+        output.seek(0)
+
+        response = HttpResponse(
+            output.read(),
+            content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        )
+        filename = f'soda_record_export_{export_date_local.strftime("%Y%m%d_%H%M%S")}.xlsx'
+        response['Content-Disposition'] = f'attachment; filename="{filename}"'
+
+        return response

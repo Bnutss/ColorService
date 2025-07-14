@@ -19,5 +19,23 @@
                 </li>
             </ul>
         </li>
+        <li class="nav-item">
+            <a class="nav-link collapsed" data-bs-target="#kizilcan-nav" data-bs-toggle="collapse" href="#">
+                <i class="bi bi-menu-down"></i><span>Kizilcan</span><i
+                    class="bi bi-chevron-down ms-auto"></i>
+            </a>
+            <ul id="kizilcan-nav" class="nav-content collapse " data-bs-parent="#sidebar-nav">
+                <li>
+                    <a href="{% url 'reports:tuz_record_list' %}">
+                        <i class="bi bi-circle"></i><span>Соль</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="{% url 'reports:soda_record_list' %}">
+                        <i class="bi bi-circle"></i><span>Сода</span>
+                    </a>
+                </li>
+            </ul>
+        </li>
     </ul>
 </aside>
