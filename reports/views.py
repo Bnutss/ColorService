@@ -19,6 +19,7 @@ import traceback
 from django.db.models import Q, Sum, Avg, Count
 from django.utils import timezone
 import pytz
+from django.contrib.auth.mixins import LoginRequiredMixin
 
 logger = logging.getLogger("reports.import_log")
 
@@ -79,7 +80,7 @@ def get_data_color_service(request):
     })
 
 
-class SupStoricoListView(ListView):
+class SupStoricoListView(LoginRequiredMixin, ListView):
     model = SupStorico
     template_name = 'sup_storico/sup_storico_list.html'
     context_object_name = 'records'
@@ -157,7 +158,7 @@ class SupStoricoListView(ListView):
         return context
 
 
-class SupStoricoPDFExportView(SupStoricoListView):
+class SupStoricoPDFExportView(LoginRequiredMixin, SupStoricoListView):
     """PDF экспорт с теми же фильтрами"""
 
     def get(self, request, *args, **kwargs):
@@ -261,7 +262,7 @@ class SupStoricoPDFExportView(SupStoricoListView):
         return response
 
 
-class SupStoricoExcelExportView(SupStoricoListView):
+class SupStoricoExcelExportView(LoginRequiredMixin, SupStoricoListView):
     """Excel экспорт с теми же фильтрами"""
 
     def get(self, request, *args, **kwargs):
@@ -501,7 +502,7 @@ def import_data(request):
         return JsonResponse({"error": str(e)}, status=500)
 
 
-class TuzRecordListView(ListView):
+class TuzRecordListView(LoginRequiredMixin, ListView):
     model = TuzRecord
     template_name = 'tuz_record/tuz_record_list.html'
     context_object_name = 'records'
@@ -562,7 +563,7 @@ class TuzRecordListView(ListView):
         return context
 
 
-class TuzRecordPDFExportView(TuzRecordListView):
+class TuzRecordPDFExportView(LoginRequiredMixin, TuzRecordListView):
     def get(self, request, *args, **kwargs):
         queryset = self.get_queryset()
 
@@ -650,7 +651,7 @@ class TuzRecordPDFExportView(TuzRecordListView):
         return response
 
 
-class TuzRecordExcelExportView(TuzRecordListView):
+class TuzRecordExcelExportView(LoginRequiredMixin, TuzRecordListView):
     def get(self, request, *args, **kwargs):
         queryset = self.get_queryset()
 
@@ -844,7 +845,7 @@ class SodaRecordListView(ListView):
         return context
 
 
-class SodaRecordPDFExportView(SodaRecordListView):
+class SodaRecordPDFExportView(LoginRequiredMixin, SodaRecordListView):
     def get(self, request, *args, **kwargs):
         queryset = self.get_queryset()
 
@@ -936,7 +937,7 @@ class SodaRecordPDFExportView(SodaRecordListView):
         return response
 
 
-class SodaRecordExcelExportView(SodaRecordListView):
+class SodaRecordExcelExportView(LoginRequiredMixin, SodaRecordListView):
     def get(self, request, *args, **kwargs):
         queryset = self.get_queryset()
 
