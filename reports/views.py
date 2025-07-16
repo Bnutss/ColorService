@@ -84,7 +84,7 @@ class SupStoricoListView(LoginRequiredMixin, ListView):
     model = SupStorico
     template_name = 'sup_storico/sup_storico_list.html'
     context_object_name = 'records'
-    paginate_by = 25
+    paginate_by = 12
 
     def get_queryset(self):
         queryset = SupStorico.objects.all()
@@ -506,7 +506,7 @@ class TuzRecordListView(LoginRequiredMixin, ListView):
     model = TuzRecord
     template_name = 'tuz_record/tuz_record_list.html'
     context_object_name = 'records'
-    paginate_by = 25
+    paginate_by = 12
 
     def get_queryset(self):
         queryset = TuzRecord.objects.all().order_by('-timestamp')
@@ -784,7 +784,7 @@ class SodaRecordListView(LoginRequiredMixin, ListView):
     model = SodaRecord
     template_name = 'soda_record/soda_record_list.html'
     context_object_name = 'records'
-    paginate_by = 25
+    paginate_by = 12
 
     def get_queryset(self):
         queryset = SodaRecord.objects.all().order_by('-timestamp')
