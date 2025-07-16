@@ -1,38 +1,43 @@
 <aside id="sidebar" class="sidebar">
     <ul class="sidebar-nav" id="sidebar-nav">
         <li class="nav-item">
-            <a class="nav-link " href="{% url 'users:dashboard' %}">
-                <i class="bi bi-grid"></i>
+            <a class="nav-link" href="{% url 'users:dashboard' %}">
+                <i class="bi bi-speedometer2"></i>
                 <span>Dashboard</span>
             </a>
         </li>
         <li class="nav-item">
-            <a class="nav-link collapsed" data-bs-target="#components-nav" data-bs-toggle="collapse" href="#">
-                <i class="bi bi-menu-down"></i><span>Отчетность</span><i
-                    class="bi bi-chevron-down ms-auto"></i>
+            <a class="nav-link collapsed" data-bs-target="#reports-nav" data-bs-toggle="collapse" href="#">
+                <i class="bi bi-file-earmark-bar-graph"></i>
+                <span>Отчетность</span>
+                <i class="bi bi-chevron-down ms-auto"></i>
             </a>
-            <ul id="components-nav" class="nav-content collapse " data-bs-parent="#sidebar-nav">
+            <ul id="reports-nav" class="nav-content collapse" data-bs-parent="#sidebar-nav">
                 <li>
                     <a href="{% url 'reports:sup_storico_list' %}">
-                        <i class="bi bi-circle"></i><span>Колор-сервис</span>
+                        <i class="bi bi-palette"></i>
+                        <span>Колор-сервис</span>
                     </a>
                 </li>
             </ul>
         </li>
         <li class="nav-item">
             <a class="nav-link collapsed" data-bs-target="#kizilcan-nav" data-bs-toggle="collapse" href="#">
-                <i class="bi bi-menu-down"></i><span>Kizilcan</span><i
-                    class="bi bi-chevron-down ms-auto"></i>
+                <i class="bi bi-building"></i>
+                <span>Kizilcan</span>
+                <i class="bi bi-chevron-down ms-auto"></i>
             </a>
-            <ul id="kizilcan-nav" class="nav-content collapse " data-bs-parent="#sidebar-nav">
+            <ul id="kizilcan-nav" class="nav-content collapse" data-bs-parent="#sidebar-nav">
                 <li>
                     <a href="{% url 'reports:tuz_record_list' %}">
-                        <i class="bi bi-circle"></i><span>Соль</span>
+                        <i class="bi bi-droplet-half"></i>
+                        <span>Соль</span>
                     </a>
                 </li>
                 <li>
                     <a href="{% url 'reports:soda_record_list' %}">
-                        <i class="bi bi-circle"></i><span>Сода</span>
+                        <i class="bi bi-cup-straw"></i>
+                        <span>Сода</span>
                     </a>
                 </li>
             </ul>
