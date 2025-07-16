@@ -50,7 +50,6 @@ class DashboardView(LoginRequiredMixin, TemplateView):
 
         today = timezone.now().date()
         week_ago = today - timedelta(days=7)
-        month_ago = today - timedelta(days=30)
 
         context['total_color_records'] = SupStorico.objects.count()
         context['total_salt_records'] = TuzRecord.objects.count()
@@ -61,20 +60,9 @@ class DashboardView(LoginRequiredMixin, TemplateView):
         context['today_salt_records'] = TuzRecord.objects.filter(timestamp__date=today).count()
         context['today_soda_records'] = SodaRecord.objects.filter(timestamp__date=today).count()
 
-        context['week_color_records'] = SupStorico.objects.filter(data_dosaggio__date__gte=week_ago).count()
-        context['week_salt_records'] = TuzRecord.objects.filter(timestamp__date__gte=week_ago).count()
-        context['week_soda_records'] = SodaRecord.objects.filter(timestamp__date__gte=week_ago).count()
-
-        context['color_machines'] = SupStorico.objects.values('macchina').annotate(
-            count=Count('sup_storico_id')).order_by('-count')[:5]
-        context['salt_machines'] = TuzRecord.objects.values('makine_adi').annotate(count=Count('id')).order_by(
-            '-count')[:5]
-        context['soda_machines'] = SodaRecord.objects.values('makine_adi').annotate(count=Count('id')).order_by(
-            '-count')[:5]
-
-        context['recent_color_records'] = SupStorico.objects.order_by('-data_dosaggio')[:5]
-        context['recent_salt_records'] = TuzRecord.objects.order_by('-timestamp')[:5]
-        context['recent_soda_records'] = SodaRecord.objects.order_by('-timestamp')[:5]
+        context['recent_color_records'] = SupStorico.objects.order_by('-data_dosaggio')[:3]
+        context['recent_salt_records'] = TuzRecord.objects.order_by('-timestamp')[:3]
+        context['recent_soda_records'] = SodaRecord.objects.order_by('-timestamp')[:3]
 
         context['total_dosed_color'] = SupStorico.objects.aggregate(total=Sum('dosato'))['total'] or 0
         context['total_salt_kg'] = TuzRecord.objects.aggregate(total=Sum('miktar_kg'))['total'] or 0
