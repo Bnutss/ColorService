@@ -212,6 +212,7 @@ class SupStoricoListView(LoginRequiredMixin, ListView):
         return context
 
 
+#
 class SupStoricoPDFExportView(SupStoricoListView):
     """PDF экспорт с теми же фильтрами"""
 
