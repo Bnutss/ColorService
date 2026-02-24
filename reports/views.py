@@ -214,7 +214,6 @@ class SupStoricoListView(LoginRequiredMixin, ListView):
 
 #
 class SupStoricoPDFExportView(SupStoricoListView):
-    """PDF экспорт с теми же фильтрами"""
 
     def get(self, request, *args, **kwargs):
         queryset = self.get_queryset()
@@ -235,14 +234,56 @@ class SupStoricoPDFExportView(SupStoricoListView):
         total_da_dosare = queryset.aggregate(total_da_dosare=Sum('da_dosare'))['total_da_dosare'] or 0
         records_with_dosato = queryset.filter(dosato__isnull=False).count()
 
+        product_types = list(
+            ColorServices.objects.exclude(type__isnull=True)
+            .exclude(type='')
+            .values_list('type', flat=True)
+            .distinct()
+            .order_by('type')
+        )
+
+        type_stats = []
+        for t in product_types:
+            ids = ColorServices.objects.filter(type=t).values_list('product_name', flat=True)
+            agg = queryset.filter(id_prodotto__in=ids).aggregate(
+                total_dosato=Sum('dosato'),
+                total_da_dosare=Sum('da_dosare'),
+                count=Count('sup_storico_id')
+            )
+            if agg['count']:
+                type_stats.append({
+                    'type': t,
+                    'count': agg['count'] or 0,
+                    'total_dosato': agg['total_dosato'] or 0,
+                    'total_da_dosare': agg['total_da_dosare'] or 0,
+                })
+
+        nan_ids = ColorServices.objects.filter(
+            Q(type__isnull=True) | Q(type='') | Q(type='nan')
+        ).values_list('product_name', flat=True)
+        nan_agg = queryset.filter(id_prodotto__in=nan_ids).aggregate(
+            total_dosato=Sum('dosato'),
+            total_da_dosare=Sum('da_dosare'),
+            count=Count('sup_storico_id')
+        )
+        if nan_agg['count']:
+            type_stats.append({
+                'type': 'Без типа',
+                'count': nan_agg['count'] or 0,
+                'total_dosato': nan_agg['total_dosato'] or 0,
+                'total_da_dosare': nan_agg['total_da_dosare'] or 0,
+            })
+
         context = {
             'records': records_with_products,
             'total_count': queryset.count(),
             'total_dosato': total_dosato,
             'total_da_dosare': total_da_dosare,
             'records_with_dosato': records_with_dosato,
+            'type_stats': type_stats,
             'search_query': request.GET.get('search', ''),
             'selected_macchina': request.GET.get('macchina', ''),
+            'selected_product_type': request.GET.get('product_type', ''),
             'date_from': request.GET.get('date_from', ''),
             'date_to': request.GET.get('date_to', ''),
             'export_date': datetime.now(),
@@ -284,6 +325,7 @@ class SupStoricoPDFExportView(SupStoricoListView):
             .bg-success { background-color: #28a745; color: white; }
             .bg-info { background-color: #17a2b8; color: white; }
             .bg-warning { background-color: #ffc107; color: black; }
+            .bg-danger { background-color: #dc3545; color: white; }
             .text-center { text-align: center; }
             .fw-bold { font-weight: bold; }
             .small { font-size: 8px; }
@@ -302,6 +344,23 @@ class SupStoricoPDFExportView(SupStoricoListView):
                 border-radius: 3px;
                 border: 1px solid #ddd;
             }
+            .type-stats-box {
+                background-color: #f8f9fa;
+                border: 1px solid #dee2e6;
+                padding: 8px;
+                margin: 8px 0;
+                border-radius: 5px;
+            }
+            .type-stat-item {
+                display: inline-block;
+                margin-right: 10px;
+                margin-bottom: 5px;
+                padding: 4px 8px;
+                background-color: white;
+                border-radius: 3px;
+                border: 1px solid #ddd;
+                font-size: 9px;
+            }
             .product-title {
                 font-size: 8px;
                 color: #666;
@@ -318,12 +377,10 @@ class SupStoricoPDFExportView(SupStoricoListView):
 
 
 class SupStoricoExcelExportView(SupStoricoListView):
-    """Excel экспорт с теми же фильтрами"""
 
     def get(self, request, *args, **kwargs):
         queryset = self.get_queryset()
 
-        # Получаем ColorServices данные
         color_services_dict = {}
         for cs in ColorServices.objects.all():
             color_services_dict[cs.product_name] = {
@@ -335,6 +392,46 @@ class SupStoricoExcelExportView(SupStoricoListView):
         total_da_dosare = queryset.aggregate(total_da_dosare=Sum('da_dosare'))['total_da_dosare'] or 0
         records_with_dosato = queryset.filter(dosato__isnull=False).count()
 
+        product_types = list(
+            ColorServices.objects.exclude(type__isnull=True)
+            .exclude(type='')
+            .values_list('type', flat=True)
+            .distinct()
+            .order_by('type')
+        )
+
+        type_stats = []
+        for t in product_types:
+            ids = ColorServices.objects.filter(type=t).values_list('product_name', flat=True)
+            agg = queryset.filter(id_prodotto__in=ids).aggregate(
+                total_dosato=Sum('dosato'),
+                total_da_dosare=Sum('da_dosare'),
+                count=Count('sup_storico_id')
+            )
+            if agg['count']:
+                type_stats.append({
+                    'type': t,
+                    'count': agg['count'] or 0,
+                    'total_dosato': agg['total_dosato'] or 0,
+                    'total_da_dosare': agg['total_da_dosare'] or 0,
+                })
+
+        nan_ids = ColorServices.objects.filter(
+            Q(type__isnull=True) | Q(type='') | Q(type='nan')
+        ).values_list('product_name', flat=True)
+        nan_agg = queryset.filter(id_prodotto__in=nan_ids).aggregate(
+            total_dosato=Sum('dosato'),
+            total_da_dosare=Sum('da_dosare'),
+            count=Count('sup_storico_id')
+        )
+        if nan_agg['count']:
+            type_stats.append({
+                'type': 'Без типа',
+                'count': nan_agg['count'] or 0,
+                'total_dosato': nan_agg['total_dosato'] or 0,
+                'total_da_dosare': nan_agg['total_da_dosare'] or 0,
+            })
+
         wb = openpyxl.Workbook()
         ws = wb.active
         ws.title = "История дозирования"
@@ -344,6 +441,7 @@ class SupStoricoExcelExportView(SupStoricoListView):
         header_alignment = Alignment(horizontal="center", vertical="center")
         stats_font = Font(bold=True, color="FFFFFF")
         stats_fill = PatternFill(start_color="28a745", end_color="28a745", fill_type="solid")
+        type_stats_fill = PatternFill(start_color="17a2b8", end_color="17a2b8", fill_type="solid")
 
         border = Border(
             left=Side(style='thin'),
@@ -352,7 +450,6 @@ class SupStoricoExcelExportView(SupStoricoListView):
             bottom=Side(style='thin')
         )
 
-        # Статистика в верхней части
         ws.cell(row=1, column=1, value="СТАТИСТИКА ДОЗИРОВАНИЯ").font = stats_font
         ws.cell(row=1, column=1).fill = stats_fill
         ws.merge_cells('A1:E1')
@@ -365,7 +462,33 @@ class SupStoricoExcelExportView(SupStoricoListView):
         ws.cell(row=3, column=3, value="Общий факт (досато):")
         ws.cell(row=3, column=4, value=float(total_dosato))
 
-        start_row = 5
+        current_row = 5
+
+        if type_stats:
+            type_header_cell = ws.cell(row=current_row, column=1, value="СТАТИСТИКА ПО ТИПАМ ПРОДУКТА")
+            type_header_cell.font = stats_font
+            type_header_cell.fill = type_stats_fill
+            ws.merge_cells(f'A{current_row}:G{current_row}')
+            current_row += 1
+
+            type_row_headers = ['Тип', 'Кол-во записей', 'Факт (досато)', 'План (да_досаре)']
+            for col, h in enumerate(type_row_headers, 1):
+                cell = ws.cell(row=current_row, column=col, value=h)
+                cell.font = Font(bold=True)
+                cell.fill = PatternFill(start_color="d1ecf1", end_color="d1ecf1", fill_type="solid")
+                cell.border = border
+            current_row += 1
+
+            for stat in type_stats:
+                ws.cell(row=current_row, column=1, value=stat['type']).border = border
+                ws.cell(row=current_row, column=2, value=stat['count']).border = border
+                ws.cell(row=current_row, column=3, value=float(stat['total_dosato'])).border = border
+                ws.cell(row=current_row, column=4, value=float(stat['total_da_dosare'])).border = border
+                current_row += 1
+
+            current_row += 1
+
+        start_row = current_row
 
         headers = [
             'ID', 'Машина', 'Лот', 'Продукт', 'Наименование продукта', 'Тип продукта', 'Резервуар',
@@ -382,7 +505,6 @@ class SupStoricoExcelExportView(SupStoricoListView):
             cell.border = border
 
         for row, record in enumerate(queryset, start_row + 1):
-            # Получаем информацию о продукте
             product_info = color_services_dict.get(record.id_prodotto, {})
 
             data = [
@@ -390,8 +512,8 @@ class SupStoricoExcelExportView(SupStoricoListView):
                 record.macchina or '',
                 record.lotto or '',
                 record.id_prodotto or '',
-                product_info.get('title', ''),  # Наименование продукта
-                product_info.get('type', ''),  # Тип продукта
+                product_info.get('title', ''),
+                product_info.get('type', ''),
                 record.tank or '',
                 record.data_dosaggio.date() if record.data_dosaggio else '',
                 record.data_dosaggio.time() if record.data_dosaggio else '',
@@ -411,12 +533,11 @@ class SupStoricoExcelExportView(SupStoricoListView):
                 cell = ws.cell(row=row, column=col, value=value)
                 cell.border = border
 
-                if col in [1, 14, 15, 16]:  # ID, количества, линия
+                if col in [1, 14, 15, 16]:
                     cell.alignment = Alignment(horizontal="right")
-                elif col in [8, 9, 10, 11, 12, 13]:  # даты и времена
+                elif col in [8, 9, 10, 11, 12, 13]:
                     cell.alignment = Alignment(horizontal="center")
 
-        # Автоширина колонок
         for column in ws.columns:
             max_length = 0
             column_letter = get_column_letter(column[0].column)
@@ -429,20 +550,27 @@ class SupStoricoExcelExportView(SupStoricoListView):
             adjusted_width = min(max_length + 2, 50)
             ws.column_dimensions[column_letter].width = adjusted_width
 
-        # Информация об экспорте
         info_row = len(queryset) + start_row + 2
         ws.cell(row=info_row, column=1, value="Параметры экспорта:").font = Font(bold=True)
 
+        offset = 1
         if request.GET.get('search'):
-            ws.cell(row=info_row + 1, column=1, value=f"Поиск: {request.GET.get('search')}")
+            ws.cell(row=info_row + offset, column=1, value=f"Поиск: {request.GET.get('search')}")
+            offset += 1
         if request.GET.get('macchina'):
-            ws.cell(row=info_row + 2, column=1, value=f"Машина: {request.GET.get('macchina')}")
+            ws.cell(row=info_row + offset, column=1, value=f"Машина: {request.GET.get('macchina')}")
+            offset += 1
+        if request.GET.get('product_type'):
+            ws.cell(row=info_row + offset, column=1, value=f"Тип продукта: {request.GET.get('product_type')}")
+            offset += 1
         if request.GET.get('date_from'):
-            ws.cell(row=info_row + 3, column=1, value=f"Дата с: {request.GET.get('date_from')}")
+            ws.cell(row=info_row + offset, column=1, value=f"Дата с: {request.GET.get('date_from')}")
+            offset += 1
         if request.GET.get('date_to'):
-            ws.cell(row=info_row + 4, column=1, value=f"Дата по: {request.GET.get('date_to')}")
+            ws.cell(row=info_row + offset, column=1, value=f"Дата по: {request.GET.get('date_to')}")
+            offset += 1
 
-        ws.cell(row=info_row + 5, column=1, value=f"Дата экспорта: {datetime.now().strftime('%d.%m.%Y %H:%M:%S')}")
+        ws.cell(row=info_row + offset, column=1, value=f"Дата экспорта: {datetime.now().strftime('%d.%m.%Y %H:%M:%S')}")
 
         output = io.BytesIO()
         wb.save(output)

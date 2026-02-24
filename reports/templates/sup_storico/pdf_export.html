@@ -22,16 +22,33 @@
             <strong>Общий факт:</strong> {{ total_dosato|floatformat:2 }}
         </div>
     </div>
-    {% if search_query or selected_macchina or date_from or date_to %}
+
+    {% if type_stats %}
+        <div class="type-stats-box">
+            <strong>Статистика по типам продукта:</strong><br>
+            {% for stat in type_stats %}
+                <div class="type-stat-item">
+                    <strong>{{ stat.type }}</strong><br>
+                    Записей: {{ stat.count }}<br>
+                    Факт: {{ stat.total_dosato|floatformat:2 }}<br>
+                    План: {{ stat.total_da_dosare|floatformat:2 }}
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+
+    {% if search_query or selected_macchina or selected_product_type or date_from or date_to %}
         <div style="margin: 10px 0; padding: 10px; background-color: #f8f9fa; border: 1px solid #dee2e6;">
             <strong>Применённые фильтры:</strong>
             {% if search_query %}<br>Поиск: {{ search_query }}{% endif %}
             {% if selected_macchina %}<br>Машина: {{ selected_macchina }}{% endif %}
+            {% if selected_product_type %}<br>Тип продукта: {{ selected_product_type }}{% endif %}
             {% if date_from %}<br>Дата с: {{ date_from }}{% endif %}
             {% if date_to %}<br>Дата по: {{ date_to }}{% endif %}
         </div>
     {% endif %}
 </div>
+
 <table class="table">
     <thead>
     <tr>
@@ -64,7 +81,9 @@
                     {% if record.color_service_info %}
                         <div class="product-title">
                             {{ record.color_service_info.title }}
-                            {% if record.color_service_info.type %} ({{ record.color_service_info.type }}){% endif %}
+                            {% if record.color_service_info.type %}
+                                ({{ record.color_service_info.type }})
+                            {% endif %}
                         </div>
                     {% endif %}
                 {% else %}—{% endif %}
@@ -111,6 +130,7 @@
     {% endfor %}
     </tbody>
 </table>
+
 <div style="margin-top: 20px; text-align: right; font-weight: bold;">
     <p>Итого планируемое количество: {{ total_da_dosare|floatformat:2 }}</p>
     <p>Итого фактическое количество: {{ total_dosato|floatformat:2 }}</p>
