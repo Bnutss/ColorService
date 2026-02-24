@@ -364,6 +364,7 @@
                                                     <a class="page-link py-1 px-2"
                                                        href="?page=
 
+
                                                                {{ page_obj.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if selected_macchina %}&macchina={{ selected_macchina }}{% endif %}{% if selected_product_type %}&product_type={{ selected_product_type }}{% endif %}{% if date_from %}&date_from={{ date_from }}{% endif %}{% if date_to %}&date_to={{ date_to }}{% endif %}">
                                                         <i class="fas fa-angle-left"></i>
                                                     </a>
@@ -380,6 +381,7 @@
                                                         <a class="page-link py-1 px-2"
                                                            href="?page=
 
+
                                                                    {{ num }}{% if search_query %}&search={{ search_query }}{% endif %}{% if selected_macchina %}&macchina={{ selected_macchina }}{% endif %}{% if selected_product_type %}&product_type={{ selected_product_type }}{% endif %}{% if date_from %}&date_from={{ date_from }}{% endif %}{% if date_to %}&date_to={{ date_to }}{% endif %}">{{ num }}</a>
                                                     </li>
                                                 {% endif %}
@@ -390,6 +392,7 @@
                                                     <a class="page-link py-1 px-2"
                                                        href="?page=
 
+
                                                                {{ page_obj.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if selected_macchina %}&macchina={{ selected_macchina }}{% endif %}{% if selected_product_type %}&product_type={{ selected_product_type }}{% endif %}{% if date_from %}&date_from={{ date_from }}{% endif %}{% if date_to %}&date_to={{ date_to }}{% endif %}">
                                                         <i class="fas fa-angle-right"></i>
                                                     </a>
@@ -397,6 +400,7 @@
                                                 <li class="page-item">
                                                     <a class="page-link py-1 px-2"
                                                        href="?page=
+
 
                                                                {{ paginator.num_pages }}{% if search_query %}&search={{ search_query }}{% endif %}{% if selected_macchina %}&macchina={{ selected_macchina }}{% endif %}{% if selected_product_type %}&product_type={{ selected_product_type }}{% endif %}{% if date_from %}&date_from={{ date_from }}{% endif %}{% if date_to %}&date_to={{ date_to }}{% endif %}">
                                                         <i class="fas fa-angle-double-right"></i>
