@@ -50,11 +50,29 @@
                                         </select>
                                     </div>
                                     <div class="col-lg-2 col-md-3 col-sm-6">
+                                        <label class="form-label mb-1 small fw-bold">Тип продукта</label>
+                                        <select class="form-select form-select-sm select2" name="product_type">
+                                            <option value="">Все типы</option>
+                                            {% for t in product_types %}
+                                                <option value="{{ t }}"
+                                                        {% if t == selected_product_type %}selected{% endif %}>
+                                                    {{ t }}
+                                                </option>
+                                            {% endfor %}
+                                            {% if has_nan_type %}
+                                                <option value="nan"
+                                                        {% if selected_product_type == 'nan' %}selected{% endif %}>
+                                                    Без типа
+                                                </option>
+                                            {% endif %}
+                                        </select>
+                                    </div>
+                                    <div class="col-lg-1 col-md-3 col-sm-6">
                                         <label class="form-label mb-1 small fw-bold">Дата с</label>
                                         <input type="date" class="form-control form-control-sm" name="date_from"
                                                value="{{ date_from }}">
                                     </div>
-                                    <div class="col-lg-2 col-md-3 col-sm-6">
+                                    <div class="col-lg-1 col-md-3 col-sm-6">
                                         <label class="form-label mb-1 small fw-bold">Дата по</label>
                                         <input type="date" class="form-control form-control-sm" name="date_to"
                                                value="{{ date_to }}">
@@ -79,6 +97,7 @@
                 </div>
             </div>
         </div>
+
         <div class="row mb-2">
             <div class="col-12">
                 <div class="card border shadow-sm">
@@ -140,6 +159,51 @@
                 </div>
             </div>
         </div>
+
+        {% if type_stats %}
+            <div class="row mb-2">
+                <div class="col-12">
+                    <div class="card border shadow-sm">
+                        <div class="card-header py-2 px-3">
+                            <h6 class="mb-0"><i class="fas fa-tags text-primary me-1"></i>Статистика по типам продукта
+                            </h6>
+                        </div>
+                        <div class="card-body py-2 px-3">
+                            <div class="row g-2">
+                                {% for stat in type_stats %}
+                                    {% if stat.count > 0 %}
+                                        <div class="col-md-4 col-sm-6">
+                                            <div class="d-flex align-items-center bg-light rounded p-2">
+                                                <div class="{% if stat.type == 'Краска' %}bg-danger{% elif stat.type == 'Химикат' %}bg-warning{% else %}bg-secondary{% endif %} rounded p-2 me-2 flex-shrink-0">
+                                                    <i class="fas fa-tag text-white"></i>
+                                                </div>
+                                                <div class="overflow-hidden">
+                                                    <div class="fw-bold small text-truncate">
+                                                        {% if stat.type == 'nan' %}Без типа{% else %}
+                                                            {{ stat.type }}{% endif %}
+                                                    </div>
+                                                    <div class="text-muted" style="font-size: 0.7rem;">
+                                                        Записей: <strong>{{ stat.count|intcomma }}</strong>
+                                                    </div>
+                                                    <div class="text-muted" style="font-size: 0.7rem;">
+                                                        Факт: <strong
+                                                            class="text-success">{{ stat.total_dosato|floatformat:1|intcomma }}</strong>
+                                                        &nbsp;|&nbsp;
+                                                        План: <strong
+                                                            class="text-info">{{ stat.total_da_dosare|floatformat:1|intcomma }}</strong>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    {% endif %}
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+
         <div class="row">
             <div class="col-12">
                 <div class="card border shadow-sm">
@@ -190,7 +254,7 @@
                                                     <div class="small text-muted mt-1" style="font-size: 0.65rem;">
                                                         {{ record.color_service_info.title }}
                                                         {% if record.color_service_info.type %}
-                                                            <span class="badge bg-light text-dark border ms-1"
+                                                            <span class="badge {% if record.color_service_info.type == 'Краска' %}bg-danger{% elif record.color_service_info.type == 'Химикат' %}bg-warning text-dark{% else %}bg-secondary{% endif %} ms-1"
                                                                   style="font-size: 0.6rem;">{{ record.color_service_info.type }}</span>
                                                         {% endif %}
                                                     </div>
@@ -292,14 +356,15 @@
                                             {% if page_obj.has_previous %}
                                                 <li class="page-item">
                                                     <a class="page-link py-1 px-2"
-                                                       href="?page=1{% if search_query %}&search={{ search_query }}{% endif %}{% if selected_macchina %}&macchina={{ selected_macchina }}{% endif %}{% if date_from %}&date_from={{ date_from }}{% endif %}{% if date_to %}&date_to={{ date_to }}{% endif %}">
+                                                       href="?page=1{% if search_query %}&search={{ search_query }}{% endif %}{% if selected_macchina %}&macchina={{ selected_macchina }}{% endif %}{% if selected_product_type %}&product_type={{ selected_product_type }}{% endif %}{% if date_from %}&date_from={{ date_from }}{% endif %}{% if date_to %}&date_to={{ date_to }}{% endif %}">
                                                         <i class="fas fa-angle-double-left"></i>
                                                     </a>
                                                 </li>
                                                 <li class="page-item">
-                                                    <a class="page-link py-1 px-2" href="?page=
+                                                    <a class="page-link py-1 px-2"
+                                                       href="?page=
 
-                                                            {{ page_obj.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if selected_macchina %}&macchina={{ selected_macchina }}{% endif %}{% if date_from %}&date_from={{ date_from }}{% endif %}{% if date_to %}&date_to={{ date_to }}{% endif %}">
+                                                               {{ page_obj.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if selected_macchina %}&macchina={{ selected_macchina }}{% endif %}{% if selected_product_type %}&product_type={{ selected_product_type }}{% endif %}{% if date_from %}&date_from={{ date_from }}{% endif %}{% if date_to %}&date_to={{ date_to }}{% endif %}">
                                                         <i class="fas fa-angle-left"></i>
                                                     </a>
                                                 </li>
@@ -312,25 +377,28 @@
                                                     </li>
                                                 {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
                                                     <li class="page-item">
-                                                        <a class="page-link py-1 px-2" href="?page=
+                                                        <a class="page-link py-1 px-2"
+                                                           href="?page=
 
-                                                                {{ num }}{% if search_query %}&search={{ search_query }}{% endif %}{% if selected_macchina %}&macchina={{ selected_macchina }}{% endif %}{% if date_from %}&date_from={{ date_from }}{% endif %}{% if date_to %}&date_to={{ date_to }}{% endif %}">{{ num }}</a>
+                                                                   {{ num }}{% if search_query %}&search={{ search_query }}{% endif %}{% if selected_macchina %}&macchina={{ selected_macchina }}{% endif %}{% if selected_product_type %}&product_type={{ selected_product_type }}{% endif %}{% if date_from %}&date_from={{ date_from }}{% endif %}{% if date_to %}&date_to={{ date_to }}{% endif %}">{{ num }}</a>
                                                     </li>
                                                 {% endif %}
                                             {% endfor %}
 
                                             {% if page_obj.has_next %}
                                                 <li class="page-item">
-                                                    <a class="page-link py-1 px-2" href="?page=
+                                                    <a class="page-link py-1 px-2"
+                                                       href="?page=
 
-                                                            {{ page_obj.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if selected_macchina %}&macchina={{ selected_macchina }}{% endif %}{% if date_from %}&date_from={{ date_from }}{% endif %}{% if date_to %}&date_to={{ date_to }}{% endif %}">
+                                                               {{ page_obj.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if selected_macchina %}&macchina={{ selected_macchina }}{% endif %}{% if selected_product_type %}&product_type={{ selected_product_type }}{% endif %}{% if date_from %}&date_from={{ date_from }}{% endif %}{% if date_to %}&date_to={{ date_to }}{% endif %}">
                                                         <i class="fas fa-angle-right"></i>
                                                     </a>
                                                 </li>
                                                 <li class="page-item">
-                                                    <a class="page-link py-1 px-2" href="?page=
+                                                    <a class="page-link py-1 px-2"
+                                                       href="?page=
 
-                                                            {{ paginator.num_pages }}{% if search_query %}&search={{ search_query }}{% endif %}{% if selected_macchina %}&macchina={{ selected_macchina }}{% endif %}{% if date_from %}&date_from={{ date_from }}{% endif %}{% if date_to %}&date_to={{ date_to }}{% endif %}">
+                                                               {{ paginator.num_pages }}{% if search_query %}&search={{ search_query }}{% endif %}{% if selected_macchina %}&macchina={{ selected_macchina }}{% endif %}{% if selected_product_type %}&product_type={{ selected_product_type }}{% endif %}{% if date_from %}&date_from={{ date_from }}{% endif %}{% if date_to %}&date_to={{ date_to }}{% endif %}">
                                                         <i class="fas fa-angle-double-right"></i>
                                                     </a>
                                                 </li>
@@ -345,6 +413,7 @@
             </div>
         </div>
     </div>
+
     <div id="loading-overlay" class="d-none position-fixed w-100 h-100 top-0 start-0 bg-dark bg-opacity-75"
          style="z-index: 9999;">
         <div class="d-flex justify-content-center align-items-center h-100">

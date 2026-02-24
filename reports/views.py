@@ -110,6 +110,18 @@ class SupStoricoListView(LoginRequiredMixin, ListView):
         if macchina_filter:
             queryset = queryset.filter(macchina=macchina_filter)
 
+        product_type_filter = self.request.GET.get('product_type')
+        if product_type_filter:
+            if product_type_filter == 'nan':
+                type_ids = ColorServices.objects.filter(
+                    Q(type__isnull=True) | Q(type='') | Q(type='nan')
+                ).values_list('product_name', flat=True)
+            else:
+                type_ids = ColorServices.objects.filter(
+                    type=product_type_filter
+                ).values_list('product_name', flat=True)
+            queryset = queryset.filter(id_prodotto__in=type_ids)
+
         date_from = self.request.GET.get('date_from')
         date_to = self.request.GET.get('date_to')
 
@@ -123,6 +135,7 @@ class SupStoricoListView(LoginRequiredMixin, ListView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         filtered_queryset = self.get_queryset()
+
         color_services_dict = {}
         for cs in ColorServices.objects.all():
             color_services_dict[cs.product_name] = {
@@ -136,18 +149,59 @@ class SupStoricoListView(LoginRequiredMixin, ListView):
             records_with_products.append(record)
         context['records'] = records_with_products
 
-        total_dosato = filtered_queryset.aggregate(
-            total_dosato=Sum('dosato')
-        )['total_dosato'] or 0
-
-        total_da_dosare = filtered_queryset.aggregate(
-            total_da_dosare=Sum('da_dosare')
-        )['total_da_dosare'] or 0
-
+        total_dosato = filtered_queryset.aggregate(total_dosato=Sum('dosato'))['total_dosato'] or 0
+        total_da_dosare = filtered_queryset.aggregate(total_da_dosare=Sum('da_dosare'))['total_da_dosare'] or 0
         records_with_dosato = filtered_queryset.filter(dosato__isnull=False).count()
+
+        product_types = list(
+            ColorServices.objects.exclude(type__isnull=True)
+            .exclude(type='')
+            .values_list('type', flat=True)
+            .distinct()
+            .order_by('type')
+        )
+        has_nan_type = ColorServices.objects.filter(
+            Q(type__isnull=True) | Q(type='') | Q(type='nan')
+        ).exists()
+
+        type_stats = []
+        for t in product_types:
+            ids = ColorServices.objects.filter(type=t).values_list('product_name', flat=True)
+            agg = filtered_queryset.filter(id_prodotto__in=ids).aggregate(
+                total_dosato=Sum('dosato'),
+                total_da_dosare=Sum('da_dosare'),
+                count=Count('sup_storico_id')
+            )
+            type_stats.append({
+                'type': t,
+                'count': agg['count'] or 0,
+                'total_dosato': agg['total_dosato'] or 0,
+                'total_da_dosare': agg['total_da_dosare'] or 0,
+            })
+
+        if has_nan_type:
+            nan_ids = ColorServices.objects.filter(
+                Q(type__isnull=True) | Q(type='') | Q(type='nan')
+            ).values_list('product_name', flat=True)
+            agg = filtered_queryset.filter(id_prodotto__in=nan_ids).aggregate(
+                total_dosato=Sum('dosato'),
+                total_da_dosare=Sum('da_dosare'),
+                count=Count('sup_storico_id')
+            )
+            type_stats.append({
+                'type': 'nan',
+                'count': agg['count'] or 0,
+                'total_dosato': agg['total_dosato'] or 0,
+                'total_da_dosare': agg['total_da_dosare'] or 0,
+            })
+
         context['machines'] = SupStorico.objects.values_list('macchina', flat=True).distinct().order_by('macchina')
+        context['product_types'] = product_types
+        context['has_nan_type'] = has_nan_type
+        context['type_stats'] = type_stats
         context['search_query'] = self.request.GET.get('search', '')
         context['selected_macchina'] = self.request.GET.get('macchina', '')
+        context['selected_product_type'] = self.request.GET.get('product_type', '')
         context['date_from'] = self.request.GET.get('date_from', '')
         context['date_to'] = self.request.GET.get('date_to', '')
         context['total_dosato'] = total_dosato
